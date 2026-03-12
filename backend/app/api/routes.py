@@ -16,6 +16,7 @@ from app.core.redis import get_redis
 from app.models.models import User, Card
 from app.services.max_auth import get_max_user
 from app.services.korona_informator import KoronaInformator, KoronaError
+from app.core.config import get_settings
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api")
@@ -246,3 +247,19 @@ async def _get_user_card(db: AsyncSession, user_id: int, card_id: str) -> Card:
     if not card:
         raise HTTPException(404, "Карта не найдена")
     return card
+
+
+# ─── Ticket config (из .env) ───
+
+@router.get("/config/tickets")
+async def get_ticket_config():
+    """Конфиг типов карт из переменных окружения."""
+    s = get_settings()
+    return {
+        "purse": [x.strip() for x in (s.ticket_purse or "").split(",") if x.strip()],
+        "pack": [x.strip() for x in (s.ticket_pack or "").split(",") if x.strip()],
+        "abonement": [x.strip() for x in (s.ticket_abonement or "").split(",") if x.strip()],
+        "social": [x.strip() for x in (s.ticket_social or "").split(",") if x.strip()],
+    }
+
+

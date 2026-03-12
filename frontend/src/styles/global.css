@@ -1,0 +1,41 @@
+/* Часпик Транспорт Lite — Light theme per approved prototype */
+:root {
+  --bg: #F4F6FA;
+  --card: #fff;
+  --card-shadow: 0 1px 3px rgba(15,23,41,0.04), 0 4px 12px rgba(15,23,41,0.06);
+  --header-bg: linear-gradient(135deg,#0F1729,#1A2744);
+  --text: #0F1729;
+  --text-sec: #6B7280;
+  --text-hint: #9CA3AF;
+  --border: #E5E7EB;
+  --input-bg: #F0F2F8;
+  --tag-bg: #F0F2F8;
+  --blue: #1B6EF3;
+  --orange: #FF6B00;
+  --purple: #7C3AED;
+  --green: #00A651;
+  --green-bg: #E5FBF0;
+  --red: #F04438;
+  --red-bg: #FEE4E2;
+  --yellow: #F79009;
+  --font: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  --radius: 12px;
+  --radius-lg: 16px;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size:16px; -webkit-font-smoothing:antialiased; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.4;
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+#root { min-height:100vh; min-height:100dvh; }
+
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.fade-in { animation: fadeIn 0.3s ease both; }
