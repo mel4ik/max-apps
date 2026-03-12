@@ -152,3 +152,23 @@ class Replenishment(Base):
     __table_args__ = (
         Index("ix_repls_card_date", "card_id", "repl_date"),
     )
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    user_id = Column(BigInteger, nullable=False, index=True)
+    card_id = Column(UUID(as_uuid=True), nullable=False)
+    card_pan = Column(String(19))
+    amount = Column(BigInteger, nullable=False)
+    service_id = Column(String(50))
+    service_desc = Column(String(255))
+    status = Column(String(20), default="CREATED", index=True)
+    yukassa_id = Column(String(100))
+    yukassa_status = Column(String(30))
+    korona_status = Column(String(30))
+    korona_response = Column(JSON)
+    error_message = Column(String(500))
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

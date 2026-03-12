@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     ticket_abonement: str = ""
     ticket_social: str = ""
     can_pay: str = ""
+    admin_login: str = "admin"
+    admin_password: str = ""
+    admin_secret_key: str = ""
 
     class Config:
         env_file = ".env"
