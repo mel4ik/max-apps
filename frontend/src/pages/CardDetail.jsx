@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, BackBtn } from '../components/Shared';
 import { fk, sd, ft } from '../api/helpers';
 import * as api from '../api/client';
+import DeleteCardBtn from '../components/DeleteCardBtn';
 
 export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bridge }) {
   var p = c.parsed || {};
@@ -90,6 +91,9 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
       !canPay && React.createElement('div', { style: { flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:13, fontSize:12, fontWeight:600, color:'#9CA3AF', background:'#F0F2F8', borderRadius:12 } }, '🚫 Пополнение запрещено'),
       React.createElement('button', { onClick: function() { bridge.haptic(); api.getCardInfo(c.id, true).catch(function(){}); }, style: { width:48, display:'flex', alignItems:'center', justifyContent:'center', padding:13, fontSize:16, fontFamily:'inherit', color:'#0F1729', background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:12, cursor:'pointer' } }, '↻')
     ),
+
+    // Удаление
+    React.createElement(DeleteCardBtn, { cardId: c.id, onDeleted: onBack, bridge: bridge }),
 
     // Операции
     React.createElement(Box, null,
