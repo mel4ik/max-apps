@@ -1,0 +1,24 @@
+.env
+*.pyc
+__pycache__/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+
+# Сертификаты (не коммитим в git!)
+certs/*.crt
+certs/*.pem
+certs/*.key
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker
+pgdata/
