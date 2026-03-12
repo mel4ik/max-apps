@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime,
-    ForeignKey, Text, JSON, BigInteger, Index,
+    ForeignKey, Text, JSON, BigInteger, Index, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, relationship
@@ -157,7 +157,7 @@ class Replenishment(Base):
 class Invoice(Base):
     __tablename__ = "invoices"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     user_id = Column(BigInteger, nullable=False, index=True)
     card_id = Column(UUID(as_uuid=True), nullable=False)
     card_pan = Column(String(19))
