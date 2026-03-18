@@ -87,7 +87,7 @@ export default function TopUp({ card: c, onBack, onPay }) {
     React.createElement(Box, null,
       React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Пополнение'),
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 4px' } },
-        '\u2022\u2022\u2022\u2022 ', (c.card_pan || '').slice(-4), ' \u00b7 Баланс: ', fk(bal), ' \u20bd'
+        (c.card_pan || '').replace(/(.{4})/g, '$1 ').trim(), ' \u00b7 Баланс: ', fk(bal), ' \u20bd'
       ),
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 14px' } },
         'Не менее ', mn, ' \u20bd \u00b7 Не более ', mx, ' \u20bd'
