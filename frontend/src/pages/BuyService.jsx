@@ -34,7 +34,7 @@ export default function BuyService({ card: c, onBack, onPay }) {
     return React.createElement('div', { style: { padding:'10px 14px 16px' } },
       React.createElement(BackBtn, { onClick: onBack }),
       React.createElement(Box, null,
-        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '🚫 ', reason)
+        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '\uD83D\uDEAB ', reason)
       )
     );
   }
@@ -47,13 +47,8 @@ export default function BuyService({ card: c, onBack, onPay }) {
     setPaying(true);
     setErr('');
     api.createPurchase(c.id, sel.serviceId, 0).then(function(res) {
-      if (res.payment_url) {
-          window.WebApp.openLink(res.payment_url);
-        } else {
-          window.open(res.payment_url, '_blank');
-        }
-        window._ykToken = res.confirmation_token; onPay(Math.round(sel.cost / 100), res.invoice_id);
-      }
+      window._ykToken = res.confirmation_token;
+      onPay(Math.round(sel.cost / 100), res.invoice_id);
     }).catch(function(e) {
       setErr(e.message);
       setPaying(false);
@@ -65,9 +60,8 @@ export default function BuyService({ card: c, onBack, onPay }) {
     React.createElement(Box, null,
       React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Покупка услуги'),
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 12px' } },
-        '•••• ', (c.card_pan || '').slice(-4)
+        '\u2022\u2022\u2022\u2022 ', (c.card_pan || '').slice(-4)
       ),
-
       services.map(function(svc) {
         var isSelected = selected === svc.serviceId;
         var ar = svc.actionRange || {};
@@ -85,22 +79,20 @@ export default function BuyService({ card: c, onBack, onPay }) {
           React.createElement('div', { style: { flex:1 } },
             React.createElement('p', { style: { fontSize:14, fontWeight:700, margin:'0 0 2px' } }, desc.textNote || 'Услуга'),
             React.createElement('p', { style: { fontSize:11, color:'#6B7280', margin:0 } },
-              sd(ar.startDate), ' – ', sd(ar.endDate),
-              desc.intervalAmount ? ' · ' + desc.intervalAmount + (desc.intervalLength === 'M' ? ' мес.' : ' дн.') : ''
+              sd(ar.startDate), ' \u2013 ', sd(ar.endDate),
+              desc.intervalAmount ? ' \u00b7 ' + desc.intervalAmount + (desc.intervalLength === 'M' ? ' мес.' : ' дн.') : ''
             )
           ),
-          React.createElement('p', { style: { fontSize:16, fontWeight:800, color:'#7C3AED', margin:0, flexShrink:0 } }, fk(svc.cost), ' ₽')
+          React.createElement('p', { style: { fontSize:16, fontWeight:800, color:'#7C3AED', margin:0, flexShrink:0 } }, fk(svc.cost), ' \u20bd')
         );
       }),
-
-      err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'8px 0 0', fontWeight:600 } }, '⚠ ', err),
-
+      err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'8px 0 0', fontWeight:600 } }, '\u26a0 ', err),
       sel && React.createElement('button', { onClick: handlePay, disabled: paying, style: {
         width:'100%', padding:14, fontSize:14, fontWeight:700, fontFamily:'inherit',
         color:'#fff', background:'linear-gradient(135deg,#7C3AED,#5B21B6)',
         border:'none', borderRadius:12, cursor:'pointer', marginTop:10,
         opacity: paying ? 0.5 : 1
-      } }, paying ? 'Создаём платёж...' : 'Оплатить ' + fk(sel.cost) + ' ₽')
+      } }, paying ? 'Создаём платёж...' : 'Оплатить ' + fk(sel.cost) + ' \u20bd')
     )
   );
 }
