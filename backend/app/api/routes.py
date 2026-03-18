@@ -260,6 +260,7 @@ async def get_ticket_config():
         "pack": [x.strip() for x in (s.ticket_pack or "").split(",") if x.strip()],
         "abonement": [x.strip() for x in (s.ticket_abonement or "").split(",") if x.strip()],
         "social": [x.strip() for x in (s.ticket_social or "").split(",") if x.strip()],
+        "can_pay": [x.strip() for x in (s.can_pay or "").split(",") if x.strip()],
     }
 
 

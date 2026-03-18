@@ -61,8 +61,8 @@ export var KIND_CONFIG = {
   social: {
     color:'#00A651', icon:'🏥', label:'Социальная карта',
     showBalance:true, showTrips:true, showDates:true, showTicketDesc:true,
-    payType:'service',
-    replMin:0, replMax:0, replPresets:[], replDynMax:false,
+    payType:'replenish',
+    replMin:1, replMax:2800, replPresets:[200,500,1000,1500], replDynMax:true,
   },
 };
 
