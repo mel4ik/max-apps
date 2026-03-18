@@ -273,6 +273,12 @@ async def yukassa_webhook(
             inv.error_message = f"Korona confirm error: {e.message}"
             log.error(f"Invoice {inv.id} Korona confirm failed: {e.message}")
 
+            try:
+                notify_text = format_payment_failed(inv.amount, inv.card_pan or '', e.message)
+                await send_message(str(inv.user_id), notify_text)
+            except Exception as ne:
+                log.warning(f"Push notify failed: {ne}")
+
     elif status in ("canceled", "cancelled"):
         # Отменяем в Короне
         try:
