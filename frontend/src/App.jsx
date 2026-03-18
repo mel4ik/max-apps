@@ -71,7 +71,7 @@ export default function App() {
       scr==='det' && card && React.createElement(CardDetail, { card:card, onBack:function(){setScr('cards');fetchCards();}, onTopUp:function(){setScr('top');}, onBuyService:function(){setScr('buy');}, bridge:bridge }),
       scr==='top' && card && React.createElement(TopUp, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
       scr==='buy' && card && React.createElement(BuyService, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
-      scr==='pay' && card && React.createElement(YooKassa, { card:card, amt:amt, svc:svc, onBack:function(){setScr('det');}, onDone:function(){setScr('cards');fetchCards();}, bridge:bridge }),
+      scr==='pay' && card && React.createElement(YooKassa, { card:card, amt:amt, svc:svc, onBack:function(){setScr('det');}, onDone:function(){if(card){api.getCardInfo(card.id,true).catch(function(){});} setScr('cards');setTimeout(fetchCards,1000);}, bridge:bridge }),
     )
   );
 }
