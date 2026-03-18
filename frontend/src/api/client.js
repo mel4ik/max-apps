@@ -108,3 +108,27 @@ export function parseCardStatus(status, cardFlags) {
     dateEnd: ci.card_expiration_date || null,
   };
 }
+
+// ─── Payment API ───
+
+export function getOperations(cardId) {
+  return req('/pay/cards/' + cardId + '/operations');
+}
+
+export function createReplenishment(cardId, amount, type) {
+  return req('/pay/cards/' + cardId + '/replenish', {
+    method: 'POST',
+    body: JSON.stringify({ amount: amount, type: type || 'VALUE' }),
+  });
+}
+
+export function createPurchase(cardId, serviceId, usedCounter) {
+  return req('/pay/cards/' + cardId + '/purchase', {
+    method: 'POST',
+    body: JSON.stringify({ service_id: serviceId, used_counter_amount: usedCounter || 0 }),
+  });
+}
+
+export function checkInvoiceStatus(invoiceId) {
+  return req('/pay/invoices/' + invoiceId + '/status');
+}

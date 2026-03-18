@@ -70,8 +70,8 @@ export default function App() {
       scr==='cards' && React.createElement(CardList, { cards:cards, loading:loading, error:error, onRefresh:fetchCards, onSelect:handleSelect, onAdd:function(){setScr('add');} }),
       scr==='add' && React.createElement(AddCard, { onBack:function(){setScr('cards');}, onAdded:handleAdded, bridge:bridge }),
       scr==='det' && card && React.createElement(CardDetail, { card:card, onBack:function(){setScr('cards');fetchCards();}, onTopUp:function(){setScr('top');}, onBuyService:function(){setScr('buy');}, bridge:bridge }),
-      scr==='top' && card && React.createElement(TopUp, { card:card, onBack:function(){setScr('det');}, onPay:function(a){setAmt(a);setSvc(null);setScr('pay');} }),
-      scr==='buy' && card && React.createElement(BuyService, { card:card, onBack:function(){setScr('det');}, onPay:function(a,s){setAmt(a);setSvc(s);setScr('pay');} }),
+      scr==='top' && card && React.createElement(TopUp, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
+      scr==='buy' && card && React.createElement(BuyService, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
       scr==='pay' && card && React.createElement(YooKassa, { card:card, amt:amt, svc:svc, onBack:function(){setScr('det');}, onDone:function(){setScr('res');}, bridge:bridge }),
       scr==='res' && card && React.createElement(Result, { card:card, amt:amt, svc:svc, onDone:function(){setScr('cards');fetchCards();} })
     )
