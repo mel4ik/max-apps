@@ -28,14 +28,18 @@ export default function DeleteCardBtn({ cardId, onDeleted, bridge }) {
     onClick: handleClick,
     disabled: loading,
     style: {
-      width:'100%', padding:12, fontSize:12, fontWeight:600,
+      width:'auto', padding:'6px 0', fontSize:11, fontWeight:500,
       fontFamily:'inherit',
       color: confirm ? '#F04438' : '#9CA3AF',
-      background: confirm ? '#FEE4E2' : 'transparent',
-      border: '1px solid ' + (confirm ? '#FECACA' : '#E5E7EB'),
-      borderRadius:10, cursor:'pointer',
+      background: 'transparent',
+      border: 'none',
+      cursor:'pointer',
       opacity: loading ? 0.5 : 1,
-      marginTop:8,
+      marginTop:4,
+      display:'block',
+      margin:'4px auto 0',
+      textDecoration: confirm ? 'none' : 'underline',
+      textDecorationColor: '#9CA3AF44',
     }
   }, loading ? 'Удаление...' : confirm ? '⚠️ Нажмите ещё раз для подтверждения' : 'Удалить карту');
 }

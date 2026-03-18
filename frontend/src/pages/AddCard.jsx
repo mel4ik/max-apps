@@ -37,7 +37,6 @@ export default function AddCard({ onBack, onAdded, bridge }) {
 
   return (
     <div style={{ padding:'10px 14px 16px' }}>
-      <BackBtn onClick={onBack} />
       <Box>
         <h2 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>Добавить карту</h2>
         <p style={{ fontSize:12, color:'#9CA3AF', margin:'0 0 16px' }}>Введите 19-значный номер ЕТК или отсканируйте QR</p>

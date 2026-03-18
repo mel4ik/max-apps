@@ -24,9 +24,10 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
         api.checkInvoiceStatus(invoiceId).then(function(res) {
           if (res.status === 'PAID') {
             if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
-            setStatus('done');
             bridge.success();
             clearInterval(checkRef.current);
+            onDone();
+            return;
           } else if (res.status === 'CANCELED' || res.status === 'FAILED') {
             if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
             setStatus('failed');
