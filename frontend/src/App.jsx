@@ -8,7 +8,6 @@ import CardDetail from './pages/CardDetail';
 import TopUp from './pages/TopUp';
 import BuyService from './pages/BuyService';
 import YooKassa from './pages/YooKassa';
-import Result from './pages/Result';
 
 export default function App() {
   var bridge = useMaxBridge();
@@ -72,8 +71,7 @@ export default function App() {
       scr==='det' && card && React.createElement(CardDetail, { card:card, onBack:function(){setScr('cards');fetchCards();}, onTopUp:function(){setScr('top');}, onBuyService:function(){setScr('buy');}, bridge:bridge }),
       scr==='top' && card && React.createElement(TopUp, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
       scr==='buy' && card && React.createElement(BuyService, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
-      scr==='pay' && card && React.createElement(YooKassa, { card:card, amt:amt, svc:svc, onBack:function(){setScr('det');}, onDone:function(){setScr('res');}, bridge:bridge }),
-      scr==='res' && card && React.createElement(Result, { card:card, amt:amt, svc:svc, onDone:function(){setScr('cards');fetchCards();} })
+      scr==='pay' && card && React.createElement(YooKassa, { card:card, amt:amt, svc:svc, onBack:function(){setScr('det');}, onDone:function(){setScr('cards');fetchCards();}, bridge:bridge }),
     )
   );
 }
