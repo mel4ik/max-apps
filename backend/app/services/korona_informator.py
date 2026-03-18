@@ -269,10 +269,11 @@ class KoronaInformator:
         return None
 
     async def _cache_set(self, key: str, data: Any, ttl: int):
+        if ttl <= 0:
+            return
         try:
             raw = json.dumps(data, default=str, ensure_ascii=False)
             await self.redis.set(key, raw, ex=ttl)
-            # Сохраняем stale-копию с бо́льшим TTL (1 час) для fallback
             await self.redis.set(key + ":stale", raw, ex=3600)
         except Exception as e:
             log.warning("Redis set error: %s", e)
