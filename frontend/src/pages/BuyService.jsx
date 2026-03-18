@@ -19,7 +19,7 @@ export default function BuyService({ card: c, onBack, onPay }) {
 
   if (loading) {
     return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      React.createElement(BackBtn, { onClick: onBack }),
+      
       React.createElement(Box, null,
         React.createElement('div', { style: { textAlign:'center', padding:'32px 0' } },
           React.createElement('div', { style: { width:24, height:24, border:'2px solid #E5E7EB', borderTopColor:'#7C3AED', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
@@ -32,7 +32,7 @@ export default function BuyService({ card: c, onBack, onPay }) {
   if (!sp || !sp.allowed || !sp.services || sp.services.length === 0) {
     var reason = sp && sp.denyReason ? sp.denyReason.description : 'Покупка услуг недоступна';
     return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      React.createElement(BackBtn, { onClick: onBack }),
+      
       React.createElement(Box, null,
         React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '\uD83D\uDEAB ', reason)
       )
@@ -56,7 +56,7 @@ export default function BuyService({ card: c, onBack, onPay }) {
   }
 
   return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-    React.createElement(BackBtn, { onClick: onBack }),
+    
     React.createElement(Box, null,
       React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Покупка услуги'),
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 12px' } },

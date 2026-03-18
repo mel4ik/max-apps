@@ -36,7 +36,7 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
   }
 
   return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-    React.createElement(BackBtn, { onClick: onBack }),
+    
 
     // Градиентная карта
     React.createElement('div', { style: { position:'relative', borderRadius:18, padding:'20px 16px', marginBottom:10, overflow:'hidden', boxShadow:'0 8px 28px '+cl+'44', background:'linear-gradient(135deg,'+cl+','+cl+'CC,'+cl+'77)' } },

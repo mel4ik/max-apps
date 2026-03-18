@@ -22,7 +22,7 @@ export default function TopUp({ card: c, onBack, onPay }) {
 
   if (loading) {
     return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      React.createElement(BackBtn, { onClick: onBack }),
+      
       React.createElement(Box, null,
         React.createElement('div', { style: { textAlign:'center', padding:'32px 0' } },
           React.createElement('div', { style: { width:24, height:24, border:'2px solid #E5E7EB', borderTopColor:'#1B6EF3', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
@@ -35,9 +35,9 @@ export default function TopUp({ card: c, onBack, onPay }) {
   if (!repl || !repl.allowed) {
     var reason = repl && repl.denyReason ? repl.denyReason.description : 'Пополнение недоступно';
     return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      React.createElement(BackBtn, { onClick: onBack }),
+      
       React.createElement(Box, null,
-        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '\uD83D\uDEAB ', reason)
+        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, 'Пополнение недоступно: ', reason)
       )
     );
   }
@@ -48,12 +48,8 @@ export default function TopUp({ card: c, onBack, onPay }) {
   var mn = Math.ceil(mnKop / 100);
   var mx = Math.floor(mxKop / 100);
   var bal = ops.cardAccount ? ops.cardAccount.balanceAmount : (p.bal || 0);
-
-  // Пресеты — фильтруем по лимитам
   var allPresets = cfg.replPresets || [200, 500, 1000, 1500];
   var presets = allPresets.filter(function(v) { return v >= mn && v <= mx; });
-
-  // Активная сумма
   var activeSum = 0;
   if (custom !== '') {
     activeSum = parseInt(custom) || 0;
@@ -78,13 +74,8 @@ export default function TopUp({ card: c, onBack, onPay }) {
     setPaying(true);
     setErr('');
     api.createReplenishment(c.id, activeSum * 100, 'VALUE').then(function(res) {
-      if (res.payment_url) {
-          window.WebApp.openLink(res.payment_url);
-        } else {
-          window.open(res.payment_url, '_blank');
-        }
-        window._ykToken = res.confirmation_token; onPay(activeSum, res.invoice_id);
-      }
+      window._ykToken = res.confirmation_token;
+      onPay(activeSum, res.invoice_id);
     }).catch(function(e) {
       setErr(e.message);
       setPaying(false);
@@ -92,7 +83,7 @@ export default function TopUp({ card: c, onBack, onPay }) {
   }
 
   return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-    React.createElement(BackBtn, { onClick: onBack }),
+    
     React.createElement(Box, null,
       React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Пополнение'),
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 4px' } },
@@ -101,69 +92,33 @@ export default function TopUp({ card: c, onBack, onPay }) {
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 14px' } },
         'Не менее ', mn, ' \u20bd \u00b7 Не более ', mx, ' \u20bd'
       ),
-
-      // Пресеты
       presets.length > 0 && React.createElement('div', null,
         React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'#6B7280', margin:'0 0 6px' } }, 'Выберите сумму'),
         React.createElement('div', { style: { display:'grid', gridTemplateColumns:'repeat('+Math.min(presets.length, 4)+',1fr)', gap:6, marginBottom:14 } },
           presets.map(function(a) {
             var isActive = custom === '' && selected === a;
             return React.createElement('button', {
-              key: a,
-              onClick: function() { selectPreset(a); },
-              style: {
-                padding:'12px 0', fontSize:15, fontWeight:700, fontFamily:'inherit',
-                background: isActive ? '#FF6B00' : '#F0F2F8',
-                color: isActive ? '#fff' : '#0F1729',
-                border:'none', borderRadius:10, cursor:'pointer'
-              }
+              key: a, onClick: function() { selectPreset(a); },
+              style: { padding:'12px 0', fontSize:15, fontWeight:700, fontFamily:'inherit', background: isActive ? '#FF6B00' : '#F0F2F8', color: isActive ? '#fff' : '#0F1729', border:'none', borderRadius:10, cursor:'pointer' }
             }, a + ' \u20bd');
           })
         )
       ),
-
-      // Поле ввода своей суммы
       React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'#6B7280', margin:'0 0 6px' } }, 'Или введите сумму'),
       React.createElement('input', {
-        type: 'text',
-        inputMode: 'numeric',
-        value: custom,
-        onChange: onCustomChange,
+        type: 'text', inputMode: 'numeric', value: custom, onChange: onCustomChange,
         placeholder: mn + ' \u2013 ' + mx + ' \u20bd',
-        style: {
-          width:'100%', padding:'14px 14px', fontSize:18, fontWeight:700,
-          fontFamily:'inherit', background:'#F0F2F8',
-          border: '2px solid ' + (custom !== '' && !ok ? '#F04438' : custom !== '' && ok ? '#00A651' : '#E5E7EB'),
-          borderRadius:12, outline:'none', color:'#0F1729',
-          marginBottom: 4, boxSizing:'border-box',
-          textAlign:'center'
-        }
+        style: { width:'100%', padding:'14px 14px', fontSize:18, fontWeight:700, fontFamily:'inherit', background:'#F0F2F8', border: '2px solid ' + (custom !== '' && !ok ? '#F04438' : custom !== '' && ok ? '#00A651' : '#E5E7EB'), borderRadius:12, outline:'none', color:'#0F1729', marginBottom: 4, boxSizing:'border-box', textAlign:'center' }
       }),
-      custom !== '' && !ok && React.createElement('p', { style: { fontSize:11, color:'#F04438', margin:'0 0 8px', textAlign:'center' } },
-        activeSum < mn ? 'Минимум ' + mn + ' \u20bd' : 'Максимум ' + mx + ' \u20bd'
-      ),
+      custom !== '' && !ok && React.createElement('p', { style: { fontSize:11, color:'#F04438', margin:'0 0 8px', textAlign:'center' } }, activeSum < mn ? 'Минимум ' + mn + ' \u20bd' : 'Максимум ' + mx + ' \u20bd'),
       custom !== '' && ok && React.createElement('p', { style: { fontSize:11, color:'#00A651', margin:'0 0 8px', textAlign:'center' } }, '\u2713 Сумма корректна'),
-
       React.createElement('div', { style: { height: 8 } }),
-
       err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'0 0 8px', fontWeight:600 } }, '\u26a0 ', err),
-
-      // Кнопка оплаты
       React.createElement('button', {
-        onClick: handlePay,
-        disabled: !ok || paying,
-        style: {
-          width:'100%', padding:15, fontSize:15, fontWeight:700, fontFamily:'inherit',
-          color:'#fff',
-          background: ok ? 'linear-gradient(135deg,#FF6B00,#E85D00)' : '#ccc',
-          border:'none', borderRadius:12, cursor: ok ? 'pointer' : 'default',
-          opacity: paying ? 0.5 : 1
-        }
+        onClick: handlePay, disabled: !ok || paying,
+        style: { width:'100%', padding:15, fontSize:15, fontWeight:700, fontFamily:'inherit', color:'#fff', background: ok ? 'linear-gradient(135deg,#FF6B00,#E85D00)' : '#ccc', border:'none', borderRadius:12, cursor: ok ? 'pointer' : 'default', opacity: paying ? 0.5 : 1 }
       }, paying ? 'Создаём платёж...' : ok ? 'Оплатить ' + activeSum + ' \u20bd' : 'Выберите сумму'),
-
-      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'#9CA3AF', marginTop:8 } },
-        '\u042eKassa \u00b7 карта, СБП, SberPay, T-Pay'
-      )
+      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'#9CA3AF', marginTop:8 } }, '\u042eKassa \u00b7 карта, СБП, SberPay, T-Pay')
     )
   );
 }
