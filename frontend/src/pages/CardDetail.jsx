@@ -14,6 +14,10 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
 
   var daysLeft = p.abEnd ? Math.max(0, Math.ceil((new Date(p.abEnd) - new Date()) / 86400000)) : 0;
 
+  var _del = useState(false); var delConfirm = _del[0]; var setDelConfirm = _del[1];
+  var _delLoad = useState(false); var delLoad = _delLoad[0]; var setDelLoad = _delLoad[1];
+  var _refreshing = useState(false); var refreshing = _refreshing[0]; var setRefreshing = _refreshing[1];
+  var _cardData = useState(c); var cardData = _cardData[0]; var setCardData = _cardData[1];
   var _t = useState([]); var trips = _t[0]; var setTrips = _t[1];
   var _r = useState([]); var repls = _r[0]; var setRepls = _r[1];
   var _l = useState(true); var opsLoading = _l[0]; var setOpsLoading = _l[1];
@@ -28,6 +32,34 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
       setRepls(res[1].data || []);
     }).finally(function() { setOpsLoading(false); });
   }, [c.id]);
+
+  function handleRefresh() {
+    setRefreshing(true);
+    bridge.haptic();
+    api.getCardInfo(c.id, true).then(function(info) {
+      var parsed = api.parseCardStatus(info, c);
+      setCardData(Object.assign({}, c, { status: info, parsed: parsed || c.parsed }));
+    }).catch(function(){}).finally(function() { setRefreshing(false); });
+  }
+
+  function handleDelete() {
+    if (!delConfirm) {
+      setDelConfirm(true);
+      bridge.haptic();
+      setTimeout(function() { setDelConfirm(false); }, 3000);
+      return;
+    }
+    setDelLoad(true);
+    bridge.haptic('medium');
+    api.deleteCard(c.id).then(function() {
+      bridge.success();
+      onBack();
+    }).catch(function() {
+      bridge.error();
+      setDelLoad(false);
+      setDelConfirm(false);
+    });
+  }
 
   function handlePay() {
     bridge.haptic('medium');
