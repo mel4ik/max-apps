@@ -23,10 +23,12 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
       checkRef.current = setInterval(function() {
         api.checkInvoiceStatus(invoiceId).then(function(res) {
           if (res.status === 'PAID') {
+            if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
             setStatus('done');
             bridge.success();
             clearInterval(checkRef.current);
           } else if (res.status === 'CANCELED' || res.status === 'FAILED') {
+            if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
             setStatus('failed');
             setErr(res.error_message || '\u041e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043f\u0440\u043e\u0448\u043b\u0430');
             bridge.error();
