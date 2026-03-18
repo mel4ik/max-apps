@@ -48,12 +48,11 @@ export default function BuyService({ card: c, onBack, onPay }) {
     setErr('');
     api.createPurchase(c.id, sel.serviceId, 0).then(function(res) {
       if (res.payment_url) {
-        if (window.WebApp && window.WebApp.openLink) {
           window.WebApp.openLink(res.payment_url);
         } else {
           window.open(res.payment_url, '_blank');
         }
-        onPay(Math.round(sel.cost / 100), res.invoice_id);
+        window._ykToken = res.confirmation_token; onPay(Math.round(sel.cost / 100), res.invoice_id);
       }
     }).catch(function(e) {
       setErr(e.message);

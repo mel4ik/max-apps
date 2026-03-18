@@ -6,31 +6,18 @@ import * as api from '../api/client';
 export default function TopUp({ card: c, onBack, onPay }) {
   var p = c.parsed || {};
   var cfg = p.cfg || {};
-
   var _ops = useState(null); var ops = _ops[0]; var setOps = _ops[1];
   var _loading = useState(true); var loading = _loading[0]; var setLoading = _loading[1];
   var _paying = useState(false); var paying = _paying[0]; var setPaying = _paying[1];
   var _err = useState(''); var err = _err[0]; var setErr = _err[1];
-  var _s = useState(0); var s = _s[0]; var setS = _s[1];
+  var _selected = useState(null); var selected = _selected[0]; var setSelected = _selected[1];
   var _custom = useState(''); var custom = _custom[0]; var setCustom = _custom[1];
 
-  // Загружаем реальные лимиты с Короны
   useEffect(function() {
     setLoading(true);
     api.getOperations(c.id).then(function(data) {
       setOps(data);
-      // Ставим дефолтный пресет
-      var restr = data.counterReplenishment && data.counterReplenishment.restriction;
-      if (restr) {
-        var min = Math.ceil(restr.value.minAmount / 100);
-        var presets = cfg.replPresets || [200, 500, 1000, 1500];
-        var valid = presets.filter(function(p) { return p >= min; });
-        if (valid.length > 0) setS(valid[0]);
-        else setS(min);
-      }
-    }).catch(function(e) {
-      setErr(e.message);
-    }).finally(function() { setLoading(false); });
+    }).catch(function(e) { setErr(e.message); }).finally(function() { setLoading(false); });
   }, [c.id]);
 
   if (loading) {
@@ -50,18 +37,41 @@ export default function TopUp({ card: c, onBack, onPay }) {
     return React.createElement('div', { style: { padding:'10px 14px 16px' } },
       React.createElement(BackBtn, { onClick: onBack }),
       React.createElement(Box, null,
-        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '🚫 ', reason)
+        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '\uD83D\uDEAB ', reason)
       )
     );
   }
 
   var restr = repl.restriction.value;
-  var mn = Math.ceil(restr.minAmount / 100);
-  var mx = Math.floor(restr.maxAmount / 100);
-  var presets = (cfg.replPresets || [200, 500, 1000, 1500]).filter(function(p) { return p >= mn && p <= mx; });
-  var activeSum = custom ? parseInt(custom) || 0 : s;
-  var ok = activeSum >= mn && activeSum <= mx;
+  var mnKop = restr.minAmount;
+  var mxKop = restr.maxAmount;
+  var mn = Math.ceil(mnKop / 100);
+  var mx = Math.floor(mxKop / 100);
   var bal = ops.cardAccount ? ops.cardAccount.balanceAmount : (p.bal || 0);
+
+  // Пресеты — фильтруем по лимитам
+  var allPresets = cfg.replPresets || [200, 500, 1000, 1500];
+  var presets = allPresets.filter(function(v) { return v >= mn && v <= mx; });
+
+  // Активная сумма
+  var activeSum = 0;
+  if (custom !== '') {
+    activeSum = parseInt(custom) || 0;
+  } else if (selected !== null) {
+    activeSum = selected;
+  }
+  var ok = activeSum >= mn && activeSum <= mx;
+
+  function selectPreset(v) {
+    setSelected(v);
+    setCustom('');
+  }
+
+  function onCustomChange(e) {
+    var val = e.target.value.replace(/\D/g, '');
+    setCustom(val);
+    setSelected(null);
+  }
 
   function handlePay() {
     if (!ok || paying) return;
@@ -69,14 +79,11 @@ export default function TopUp({ card: c, onBack, onPay }) {
     setErr('');
     api.createReplenishment(c.id, activeSum * 100, 'VALUE').then(function(res) {
       if (res.payment_url) {
-        // Открываем ЮKassa в MAX WebView
-        if (window.WebApp && window.WebApp.openLink) {
           window.WebApp.openLink(res.payment_url);
         } else {
           window.open(res.payment_url, '_blank');
         }
-        // Переходим на экран ожидания
-        onPay(activeSum, res.invoice_id);
+        window._ykToken = res.confirmation_token; onPay(activeSum, res.invoice_id);
       }
     }).catch(function(e) {
       setErr(e.message);
@@ -89,49 +96,73 @@ export default function TopUp({ card: c, onBack, onPay }) {
     React.createElement(Box, null,
       React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Пополнение'),
       React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 4px' } },
-        '•••• ', (c.card_pan || '').slice(-4), ' · Баланс: ', fk(bal), ' ₽'
+        '\u2022\u2022\u2022\u2022 ', (c.card_pan || '').slice(-4), ' \u00b7 Баланс: ', fk(bal), ' \u20bd'
       ),
-      React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 12px' } },
-        'от ', mn, ' ₽ до ', mx, ' ₽'
+      React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 14px' } },
+        'Не менее ', mn, ' \u20bd \u00b7 Не более ', mx, ' \u20bd'
       ),
 
       // Пресеты
-      presets.length > 0 && React.createElement('div', { style: { display:'grid', gridTemplateColumns:'repeat('+Math.min(presets.length, 4)+',1fr)', gap:6, marginBottom:12 } },
-        presets.map(function(a) {
-          return React.createElement('button', { key: a, onClick: function() { setS(a); setCustom(''); }, style: {
-            padding:'10px 0', fontSize:14, fontWeight:700, fontFamily:'inherit',
-            background: !custom && s===a ? '#FF6B00' : '#F0F2F8',
-            color: !custom && s===a ? '#fff' : '#0F1729',
-            border:'none', borderRadius:8, cursor:'pointer'
-          } }, a);
-        })
+      presets.length > 0 && React.createElement('div', null,
+        React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'#6B7280', margin:'0 0 6px' } }, 'Выберите сумму'),
+        React.createElement('div', { style: { display:'grid', gridTemplateColumns:'repeat('+Math.min(presets.length, 4)+',1fr)', gap:6, marginBottom:14 } },
+          presets.map(function(a) {
+            var isActive = custom === '' && selected === a;
+            return React.createElement('button', {
+              key: a,
+              onClick: function() { selectPreset(a); },
+              style: {
+                padding:'12px 0', fontSize:15, fontWeight:700, fontFamily:'inherit',
+                background: isActive ? '#FF6B00' : '#F0F2F8',
+                color: isActive ? '#fff' : '#0F1729',
+                border:'none', borderRadius:10, cursor:'pointer'
+              }
+            }, a + ' \u20bd');
+          })
+        )
       ),
 
-      // Своя сумма
+      // Поле ввода своей суммы
+      React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'#6B7280', margin:'0 0 6px' } }, 'Или введите сумму'),
       React.createElement('input', {
-        type:'text', inputMode:'numeric', value: custom,
-        onChange: function(e) { setCustom(e.target.value.replace(/\D/g, '')); },
-        placeholder: 'Другая сумма (' + mn + '–' + mx + ')',
+        type: 'text',
+        inputMode: 'numeric',
+        value: custom,
+        onChange: onCustomChange,
+        placeholder: mn + ' \u2013 ' + mx + ' \u20bd',
         style: {
-          width:'100%', padding:'12px 14px', fontSize:16, fontWeight:600,
+          width:'100%', padding:'14px 14px', fontSize:18, fontWeight:700,
           fontFamily:'inherit', background:'#F0F2F8',
-          border:'2px solid ' + (custom && !ok ? '#F04438' : '#E5E7EB'),
+          border: '2px solid ' + (custom !== '' && !ok ? '#F04438' : custom !== '' && ok ? '#00A651' : '#E5E7EB'),
           borderRadius:12, outline:'none', color:'#0F1729',
-          marginBottom:12, boxSizing:'border-box'
+          marginBottom: 4, boxSizing:'border-box',
+          textAlign:'center'
         }
       }),
+      custom !== '' && !ok && React.createElement('p', { style: { fontSize:11, color:'#F04438', margin:'0 0 8px', textAlign:'center' } },
+        activeSum < mn ? 'Минимум ' + mn + ' \u20bd' : 'Максимум ' + mx + ' \u20bd'
+      ),
+      custom !== '' && ok && React.createElement('p', { style: { fontSize:11, color:'#00A651', margin:'0 0 8px', textAlign:'center' } }, '\u2713 Сумма корректна'),
 
-      err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'0 0 8px', fontWeight:600 } }, '⚠ ', err),
+      React.createElement('div', { style: { height: 8 } }),
 
-      React.createElement('button', { onClick: handlePay, disabled: !ok || paying, style: {
-        width:'100%', padding:14, fontSize:14, fontWeight:700, fontFamily:'inherit',
-        color:'#fff', background:'linear-gradient(135deg,#FF6B00,#E85D00)',
-        border:'none', borderRadius:12, cursor:'pointer',
-        opacity: ok && !paying ? 1 : 0.4
-      } }, paying ? 'Создаём платёж...' : 'Оплатить ' + (activeSum > 0 ? activeSum + ' ₽' : '')),
+      err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'0 0 8px', fontWeight:600 } }, '\u26a0 ', err),
 
-      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'#9CA3AF', marginTop:6 } },
-        'ЮKassa · карта, СБП, SberPay, T-Pay'
+      // Кнопка оплаты
+      React.createElement('button', {
+        onClick: handlePay,
+        disabled: !ok || paying,
+        style: {
+          width:'100%', padding:15, fontSize:15, fontWeight:700, fontFamily:'inherit',
+          color:'#fff',
+          background: ok ? 'linear-gradient(135deg,#FF6B00,#E85D00)' : '#ccc',
+          border:'none', borderRadius:12, cursor: ok ? 'pointer' : 'default',
+          opacity: paying ? 0.5 : 1
+        }
+      }, paying ? 'Создаём платёж...' : ok ? 'Оплатить ' + activeSum + ' \u20bd' : 'Выберите сумму'),
+
+      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'#9CA3AF', marginTop:8 } },
+        '\u042eKassa \u00b7 карта, СБП, SberPay, T-Pay'
       )
     )
   );

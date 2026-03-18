@@ -133,7 +133,8 @@ async def create_replenishment(
 
     return {
         "invoice_id": str(inv.id),
-        "payment_url": yk_payment["confirmation_url"],
+        "payment_url": yk_payment.get("confirmation_url"),
+        "confirmation_token": yk_payment.get("confirmation_token"),
         "amount": invoice_amount,
         "status": "PENDING",
     }
@@ -208,7 +209,8 @@ async def create_purchase(
 
     return {
         "invoice_id": str(inv.id),
-        "payment_url": yk_payment["confirmation_url"],
+        "payment_url": yk_payment.get("confirmation_url"),
+        "confirmation_token": yk_payment.get("confirmation_token"),
         "amount": invoice_amount,
         "status": "PENDING",
     }

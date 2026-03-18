@@ -44,8 +44,8 @@ class YukassaClient:
                 "currency": "RUB",
             },
             "confirmation": {
-                "type": "redirect",
-                "return_url": self.return_url,
+                "type": "embedded",
+                
             },
             "capture": True,
             "description": description[:128],
@@ -66,8 +66,10 @@ class YukassaClient:
             raise YukassaError(f"ЮKassa: {r.text}", r.status_code)
 
         data = r.json()
+        confirmation_token = None
         confirmation_url = None
         if data.get("confirmation"):
+            confirmation_token = data["confirmation"].get("confirmation_token")
             confirmation_url = data["confirmation"].get("confirmation_url")
 
         log.info(f"YuKassa payment created: id={data['id']}, status={data['status']}")
@@ -75,6 +77,7 @@ class YukassaClient:
         return {
             "payment_id": data["id"],
             "status": data["status"],
+            "confirmation_token": confirmation_token,
             "confirmation_url": confirmation_url,
             "amount": data["amount"],
         }
