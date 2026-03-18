@@ -11,6 +11,7 @@ from app.core.redis import close_redis
 from app.models.models import Base
 from app.api.routes import router
 from app.api.admin_routes import router as admin_router
+from app.api.payment_routes import router as payment_router
 from app.services.keycloak import get_keycloak
 
 logging.basicConfig(
@@ -49,3 +50,4 @@ app.add_middleware(
 
 app.include_router(router)
 app.include_router(admin_router)
+app.include_router(payment_router)
