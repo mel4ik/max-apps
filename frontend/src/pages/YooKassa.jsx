@@ -36,7 +36,7 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
             clearInterval(checkRef.current);
           }
         }).catch(function() {});
-      }, 3000);
+      }, 1500);
     }
 
     var token = window._ykToken;
