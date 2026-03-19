@@ -64,8 +64,8 @@ export default function App() {
     } catch(e) {}
   }
 
-  return React.createElement('div', { style: { maxWidth:480, margin:'0 auto', background:'#F4F6FA', minHeight:'100dvh', fontFamily:"'Manrope',sans-serif", color:'#0F1729', display:'flex', flexDirection:'column' } },
-    React.createElement('div', { style: { flex:1, overflowY:'auto', overflowX:'hidden' } },
+  return React.createElement('div', { className: 'app-root' },
+    React.createElement('div', { className: 'app-scroll' },
       scr==='cards' && React.createElement(CardList, { cards:cards, loading:loading, error:error, onRefresh:fetchCards, onSelect:handleSelect, onAdd:function(){setScr('add');} }),
       scr==='add' && React.createElement(AddCard, { onBack:function(){setScr('cards');}, onAdded:handleAdded, bridge:bridge }),
       scr==='det' && card && React.createElement(CardDetail, { card:card, onBack:function(){setScr('cards');fetchCards();}, onTopUp:function(){setScr('top');}, onBuyService:function(){setScr('buy');}, bridge:bridge }),

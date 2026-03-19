@@ -3,6 +3,8 @@ import { Box } from '../components/Shared';
 import { fk, sd, ft } from '../api/helpers';
 import * as api from '../api/client';
 
+var SHOW_STEP = 8;
+
 export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bridge }) {
   var p = c.parsed || {};
   var cfg = p.cfg || {};
@@ -16,22 +18,44 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
   var _delLoad = useState(false); var delLoad = _delLoad[0]; var setDelLoad = _delLoad[1];
   var _refreshing = useState(false); var refreshing = _refreshing[0]; var setRefreshing = _refreshing[1];
   var _p2 = useState(p); var liveP = _p2[0]; var setLiveP = _p2[1];
-  var _t = useState([]); var trips = _t[0]; var setTrips = _t[1];
-  var _r = useState([]); var repls = _r[0]; var setRepls = _r[1];
+
+  // Все данные загружаем разом, показываем порциями
+  var _trips = useState([]); var allTrips = _trips[0]; var setAllTrips = _trips[1];
+  var _repls = useState([]); var allRepls = _repls[0]; var setAllRepls = _repls[1];
+  var _tripsShow = useState(SHOW_STEP); var tripsShow = _tripsShow[0]; var setTripsShow = _tripsShow[1];
+  var _replsShow = useState(SHOW_STEP); var replsShow = _replsShow[0]; var setReplsShow = _replsShow[1];
+
   var _l = useState(true); var opsLoading = _l[0]; var setOpsLoading = _l[1];
+  var _tab = useState('trips'); var tab = _tab[0]; var setTab = _tab[1];
 
   useEffect(function() { setLiveP(p); }, [c.id]);
 
+  // Загружаем все операции за раз
   useEffect(function() {
     setOpsLoading(true);
+    setAllTrips([]); setAllRepls([]);
+    setTripsShow(SHOW_STEP); setReplsShow(SHOW_STEP);
+
     Promise.all([
-      api.getTrips(c.id).catch(function() { return { data:[] }; }),
-      api.getReplenishments(c.id).catch(function() { return { data:[] }; }),
+      api.getTrips(c.id).catch(function(e) { console.error('trips err:', e); return { data:[] }; }),
+      api.getReplenishments(c.id).catch(function(e) { console.error('repls err:', e); return { data:[] }; }),
     ]).then(function(res) {
-      setTrips(res[0].data || []);
-      setRepls(res[1].data || []);
+      console.log('trips keys:', Object.keys(res[0]));
+      console.log('repls keys:', Object.keys(res[1]));
+      var td = res[0].data || res[0].content || [];
+      var rd = res[1].data || res[1].content || [];
+      if (!Array.isArray(td)) td = [];
+      if (!Array.isArray(rd)) rd = [];
+      setAllTrips(td);
+      setAllRepls(rd);
     }).finally(function() { setOpsLoading(false); });
   }, [c.id]);
+
+  // Видимые порции
+  var trips = allTrips.slice(0, tripsShow);
+  var repls = allRepls.slice(0, replsShow);
+  var tripsHasMore = tripsShow < allTrips.length;
+  var replsHasMore = replsShow < allRepls.length;
 
   function doRefresh() {
     setRefreshing(true);
@@ -59,9 +83,20 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
     if (payType === 'replenish') onTopUp(); else onBuyService();
   }
 
+  function transportIcon(type) {
+    if (!type) return '\uD83D\uDE8C';
+    var t = type.toLowerCase();
+    if (t.indexOf('\u0442\u0440\u0430\u043c\u0432\u0430\u0439') >= 0) return '\uD83D\uDE8B';
+    if (t.indexOf('\u0442\u0440\u043e\u043b\u043b\u0435\u0439\u0431\u0443\u0441') >= 0) return '\uD83D\uDE8E';
+    if (t.indexOf('\u043c\u0435\u0442\u0440\u043e') >= 0) return '\uD83D\uDE87';
+    if (t.indexOf('\u044d\u043b\u0435\u043a\u0442\u0440\u0438\u0447\u043a\u0430') >= 0 || t.indexOf('\u043f\u043e\u0435\u0437\u0434') >= 0) return '\uD83D\uDE86';
+    return '\uD83D\uDE8C';
+  }
+
   var dp = liveP;
 
-  return React.createElement('div', { style: { padding:'10px 14px 16px' } },
+  return React.createElement('div', { className: 'cd-wrap' },
+    // ── Карточка-визитка ──
     React.createElement('div', { style: { position:'relative', borderRadius:18, padding:'20px 16px', marginBottom:10, overflow:'hidden', boxShadow:'0 8px 28px '+cl+'44', background:'linear-gradient(135deg,'+cl+','+cl+'CC,'+cl+'77)' } },
       React.createElement('div', { style: { position:'absolute', top:-35, right:-35, width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,0.1)' } }),
       React.createElement('div', { style: { display:'flex', justifyContent:'space-between', alignItems:'center', position:'relative', marginBottom:6 } },
@@ -91,42 +126,90 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
       ),
       dp.stale && React.createElement('p', { style: { fontSize:10, color:'rgba(255,255,255,0.4)', margin:'8px 0 0', fontStyle:'italic' } }, '\u26a1 \u041a\u044d\u0448 (', dp.source, ')')
     ),
-    React.createElement('div', { style: { display:'flex', gap:8, marginBottom:10 } },
-      canPay && payType !== 'none' && React.createElement('button', { onClick: doPay, style: { flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, padding:13, fontSize:13, fontWeight:700, fontFamily:'inherit', color:'#fff', background:'#FF6B00', border:'none', borderRadius:12, cursor:'pointer' } }, '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
-      !canPay && React.createElement('div', { style: { flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:13, fontSize:12, fontWeight:600, color:'#9CA3AF', background:'var(--card)', borderRadius:12 } }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
-      React.createElement('button', { onClick: doRefresh, style: { width:44, display:'flex', alignItems:'center', justifyContent:'center', padding:12, fontSize:16, fontFamily:'inherit', color:'var(--text, #0F1729)', background:'var(--card, #fff)', border:'1.5px solid var(--border, #E5E7EB)', borderRadius:12, cursor:'pointer' } }, refreshing ? '\u23f3' : '\u21bb'),
-      React.createElement('button', { onClick: doDelete, disabled: delLoad, style: { width:44, display:'flex', alignItems:'center', justifyContent:'center', padding:12, fontSize:15, fontFamily:'inherit', color: delConfirm ? '#F04438' : 'var(--text-hint, #9CA3AF)', background: delConfirm ? '#3D1515' : 'var(--card, #fff)', border: '1.5px solid ' + (delConfirm ? '#FECACA' : 'var(--border, #E5E7EB)'), borderRadius:12, cursor:'pointer', opacity: delLoad ? 0.5 : 1 } }, delConfirm ? '\u274c' : '\ud83d\uddd1\ufe0f')
+
+    // ── Кнопки действий ──
+    React.createElement('div', { className: 'cd-actions' },
+      canPay && payType !== 'none' && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
+      !canPay && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
+      React.createElement('button', { onClick: doRefresh, className: 'cd-icon-btn' }, refreshing ? '\u23f3' : '\u21bb'),
+      React.createElement('button', {
+        onClick: doDelete, disabled: delLoad,
+        className: 'cd-icon-btn' + (delConfirm ? ' delete-confirm' : ' delete'),
+        style: { opacity: delLoad ? 0.5 : 1 }
+      }, delConfirm ? '\u274c' : '\ud83d\uddd1\ufe0f')
     ),
+
+    // ── Операции ──
     React.createElement(Box, null,
-      React.createElement('h3', { style: { fontSize:14, fontWeight:700, margin:'0 0 8px' } }, '\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438'),
-      opsLoading && React.createElement('div', { style: { textAlign:'center', padding:'16px 0' } },
-        React.createElement('div', { style: { width:20, height:20, border:'2px solid var(--border, #E5E7EB)', borderTopColor:'#1B6EF3', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
+      React.createElement('div', { className: 'cd-ops-header' },
+        React.createElement('h3', { className: 'cd-ops-title' }, '\u041e\u043f\u0435\u0440\u0430\u0446\u0438\u0438')
       ),
-      !opsLoading && repls.map(function(r, i) {
-        return React.createElement('div', { key:'r'+i, style: { display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom:'1px solid var(--border-light, #F0F2F8)' } },
-          React.createElement('div', { style: { width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, background:'var(--green-bg, #E5FBF0)' } },
-            React.createElement('span', { style: { color:'#00D26A', fontWeight:700, fontSize:13 } }, '\u2191')
+      React.createElement('div', { className: 'cd-tabs' },
+        React.createElement('button', { className: 'cd-tab' + (tab === 'trips' ? ' active' : ''), onClick: function(){ setTab('trips'); } }, '\uD83D\uDE8C \u041f\u043e\u0435\u0437\u0434\u043a\u0438', allTrips.length > 0 ? ' (' + allTrips.length + ')' : ''),
+        React.createElement('button', { className: 'cd-tab' + (tab === 'repls' ? ' active' : ''), onClick: function(){ setTab('repls'); } }, '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f', allRepls.length > 0 ? ' (' + allRepls.length + ')' : '')
+      ),
+
+      opsLoading && React.createElement('div', { style: { textAlign:'center', padding:'16px 0' } },
+        React.createElement('div', { className: 'cd-ops-spinner' })
+      ),
+
+      // ── Поездки ──
+      !opsLoading && tab === 'trips' && trips.map(function(t, i) {
+        var routeLabel = t.route_num
+          ? ('\u2116' + t.route_num + (t.route_description ? ' \u2014 ' + t.route_description.replace(/\\n|\\r/g, '').trim() : ''))
+          : (t.route_name || '\u041f\u043e\u0435\u0437\u0434\u043a\u0430');
+        var transportType = t.route_transport_type || '';
+        var carrier = t.transport_carrier_name || '';
+
+        return React.createElement('div', { key:'t'+i, className: 'cd-op-row' },
+          React.createElement('div', { className: 'cd-op-icon trip' },
+            React.createElement('span', { className: 'arrow-down' }, transportIcon(transportType))
           ),
-          React.createElement('div', { style: { flex:1 } },
-            React.createElement('p', { style: { fontSize:13, fontWeight:600, margin:'0 0 1px' } }, api.translateOp(r.type_operation)),
-            React.createElement('p', { style: { fontSize:11, color:'var(--text-hint, #9CA3AF)', margin:0 } }, ft(r.replenishment_date))
+          React.createElement('div', { style: { flex:1, minWidth:0 } },
+            React.createElement('p', { className: 'cd-op-name' }, routeLabel),
+            React.createElement('p', { className: 'cd-op-date' }, ft(t.trip_date || t.pass_date)),
+            (transportType || carrier) && React.createElement('p', { className: 'cd-op-transport' },
+              transportType, carrier ? ' \u00b7 ' + carrier : ''
+            )
           ),
-          React.createElement('p', { style: { fontSize:14, fontWeight:700, color: r.replenishment_sum > 0 ? '#00D26A' : 'var(--text-hint, #9CA3AF)', margin:0 } }, r.replenishment_sum > 0 ? '+' + fk(r.replenishment_sum) + ' \u20bd' : '0 \u20bd')
+          React.createElement('p', { className: 'cd-op-amount' },
+            t.trip_sum ? '\u2212' + fk(t.trip_sum) + ' \u20bd'
+            : t.pass_sum ? '\u2212' + fk(t.pass_sum) + ' \u20bd'
+            : ''
+          )
         );
       }),
-      !opsLoading && trips.map(function(t, i) {
-        return React.createElement('div', { key:'t'+i, style: { display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom:'1px solid var(--border-light, #F0F2F8)' } },
-          React.createElement('div', { style: { width:32, height:32, borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, background:'var(--blue-bg, #E8F0FE)' } },
-            React.createElement('span', { style: { color:'#1B6EF3', fontWeight:700, fontSize:13 } }, '\u2193')
+
+      !opsLoading && tab === 'trips' && tripsHasMore && React.createElement('button', {
+        className: 'cd-load-more',
+        onClick: function() { setTripsShow(function(v) { return v + SHOW_STEP; }); bridge.haptic(); }
+      }, '\u0415\u0449\u0451 \u043f\u043e\u0435\u0437\u0434\u043a\u0438 (' + (allTrips.length - tripsShow) + ')'),
+
+      !opsLoading && tab === 'trips' && !allTrips.length && React.createElement('p', { className: 'cd-no-ops' }, '\u041d\u0435\u0442 \u043f\u043e\u0435\u0437\u0434\u043e\u043a'),
+
+      // ── Пополнения ──
+      !opsLoading && tab === 'repls' && repls.map(function(r, i) {
+        return React.createElement('div', { key:'r'+i, className: 'cd-op-row' },
+          React.createElement('div', { className: 'cd-op-icon repl' },
+            React.createElement('span', { className: 'arrow-up' }, '\u2191')
           ),
-          React.createElement('div', { style: { flex:1 } },
-            React.createElement('p', { style: { fontSize:13, fontWeight:600, margin:'0 0 1px' } }, t.route_name || '\u041f\u043e\u0435\u0437\u0434\u043a\u0430'),
-            React.createElement('p', { style: { fontSize:11, color:'var(--text-hint, #9CA3AF)', margin:0 } }, ft(t.pass_date || t.trip_date))
+          React.createElement('div', { style: { flex:1, minWidth:0 } },
+            React.createElement('p', { className: 'cd-op-name' }, api.translateOp(r.type_operation)),
+            React.createElement('p', { className: 'cd-op-date' }, ft(r.replenishment_date)),
+            r.agent_description && React.createElement('p', { className: 'cd-op-agent' }, r.agent_description)
           ),
-          React.createElement('p', { style: { fontSize:14, fontWeight:700, margin:0 } }, '\u2212', fk(t.pass_sum || t.sum_amount || 0), ' \u20bd')
+          React.createElement('p', { className: 'cd-op-amount' + (r.replenishment_sum > 0 ? ' positive' : ' hint') },
+            r.replenishment_sum > 0 ? '+' + fk(r.replenishment_sum) + ' \u20bd' : '0 \u20bd'
+          )
         );
       }),
-      !opsLoading && !repls.length && !trips.length && React.createElement('p', { style: { fontSize:12, color:'var(--text-hint, #9CA3AF)', textAlign:'center', padding:'16px 0' } }, '\u041d\u0435\u0442 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0439')
+
+      !opsLoading && tab === 'repls' && replsHasMore && React.createElement('button', {
+        className: 'cd-load-more',
+        onClick: function() { setReplsShow(function(v) { return v + SHOW_STEP; }); bridge.haptic(); }
+      }, '\u0415\u0449\u0451 \u043f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f (' + (allRepls.length - replsShow) + ')'),
+
+      !opsLoading && tab === 'repls' && !allRepls.length && React.createElement('p', { className: 'cd-no-ops' }, '\u041d\u0435\u0442 \u043f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0439')
     )
   );
 }

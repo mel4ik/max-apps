@@ -10,6 +10,7 @@ export function Box({ children, style }) {
 export function BackBtn({ onClick }) {
   return React.createElement('button', {
     onClick: onClick,
+    className: 'back-btn',
     style: {
       display: 'flex', alignItems: 'center', gap: 4,
       background: 'none', border: 'none',

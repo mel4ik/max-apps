@@ -23,20 +23,25 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
       checkRef.current = setInterval(function() {
         api.checkInvoiceStatus(invoiceId).then(function(res) {
           if (res.status === 'PAID') {
+            clearInterval(checkRef.current);
+            // Сразу скрываем виджет ЮKassa чтобы не показывать его экран успеха
+            var el = document.getElementById('yk-widget-container');
+            if (el) el.style.display = 'none';
             if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
             bridge.success();
-            clearInterval(checkRef.current);
             setStatus('done');
             return;
           } else if (res.status === 'CANCELED' || res.status === 'FAILED') {
+            clearInterval(checkRef.current);
+            var el2 = document.getElementById('yk-widget-container');
+            if (el2) el2.style.display = 'none';
             if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
             setStatus('failed');
-            setErr(res.error_message || '\u041e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043f\u0440\u043e\u0448\u043b\u0430');
+            setErr(res.error_message || 'Оплата не прошла');
             bridge.error();
-            clearInterval(checkRef.current);
           }
         }).catch(function() {});
-      }, 1500);
+      }, 2000);
     }
 
     var token = window._ykToken;
@@ -47,7 +52,7 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
           return_url: window.location.origin,
           customization: { modal: false, colors: { control_primary: '#FF6B00' } },
           error_callback: function() {
-            setErr('\u041e\u0448\u0438\u0431\u043a\u0430 \u043e\u043f\u043b\u0430\u0442\u044b');
+            setErr('Ошибка оплаты');
             setStatus('failed');
             bridge.error();
           }
@@ -55,7 +60,7 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
         checkout.render('yk-widget-container').then(function() { startPolling(); });
         widgetRef.current = checkout;
       } catch (e) {
-        setErr('\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0444\u043e\u0440\u043c\u0443');
+        setErr('Не удалось загрузить форму');
         setStatus('failed');
       }
     } else {
@@ -71,42 +76,45 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
   }, [invoiceId]);
 
   if (status === 'done') {
-    var title = isReplenish ? '\u0411\u0430\u043b\u0430\u043d\u0441 \u043f\u043e\u043f\u043e\u043b\u043d\u0435\u043d!' : '\u0423\u0441\u043b\u0443\u0433\u0430 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0430!';
+    var title = isReplenish ? 'Баланс пополнен!' : 'Услуга подключена!';
     var subtitle = isReplenish ? '+' + amt + ' \u20bd' : amt + ' \u20bd';
-    return React.createElement('div', { style: { padding:'10px 14px 16px' } },
+    return React.createElement('div', { className: 'yk-wrap' },
       React.createElement(Box, null,
-        React.createElement('div', { style: { textAlign:'center', padding:'24px 0' } },
-          React.createElement('div', { style: { width:64, height:64, borderRadius:'50%', background:'#E5FBF0', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', fontSize:32 } }, '\u2705'),
-          React.createElement('h2', { style: { fontSize:18, fontWeight:800, margin:'0 0 6px' } }, title),
-          React.createElement('p', { style: { fontSize:18, fontWeight:700, color:'#00A651', margin:'0 0 12px' } }, subtitle),
-          React.createElement('p', { style: { fontSize:13, fontWeight:600, color:'#0F1729', margin:'0 0 2px' } }, panFmt),
-          React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 20px' } }, region),
-          React.createElement('button', { onClick: onDone, style: { width:'100%', padding:14, fontSize:14, fontWeight:700, fontFamily:'inherit', color:'#fff', background:'#1B6EF3', border:'none', borderRadius:12, cursor:'pointer' } }, '\u0413\u043e\u0442\u043e\u0432\u043e')
+        React.createElement('div', { className: 'yk-result' },
+          React.createElement('div', { className: 'yk-result-icon success' }, '\u2705'),
+          React.createElement('h2', { className: 'yk-result-title' }, title),
+          React.createElement('p', { className: 'yk-result-amount' }, subtitle),
+          React.createElement('p', { className: 'yk-result-pan' }, panFmt),
+          React.createElement('p', { className: 'yk-result-region' }, region),
+          React.createElement('button', { onClick: onDone, className: 'yk-btn-primary' }, 'Готово')
         )
       )
     );
   }
 
   if (status === 'failed') {
-    return React.createElement('div', { style: { padding:'10px 14px 16px' } },
+    return React.createElement('div', { className: 'yk-wrap' },
       React.createElement(Box, null,
-        React.createElement('div', { style: { textAlign:'center', padding:'24px 0' } },
-          React.createElement('div', { style: { width:64, height:64, borderRadius:'50%', background:'#FEE4E2', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px', fontSize:32 } }, '\u274c'),
-          React.createElement('h2', { style: { fontSize:18, fontWeight:800, margin:'0 0 4px' } }, '\u041e\u043f\u043b\u0430\u0442\u0430 \u043d\u0435 \u043f\u0440\u043e\u0448\u043b\u0430'),
-          React.createElement('p', { style: { fontSize:12, color:'#9CA3AF', margin:'0 0 16px' } }, err || '\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437'),
-          React.createElement('button', { onClick: onBack, style: { width:'100%', padding:14, fontSize:14, fontWeight:700, fontFamily:'inherit', color:'#1B6EF3', background:'#E8F0FE', border:'none', borderRadius:12, cursor:'pointer' } }, '\u041d\u0430\u0437\u0430\u0434')
+        React.createElement('div', { className: 'yk-result' },
+          React.createElement('div', { className: 'yk-result-icon fail' }, '\u274c'),
+          React.createElement('h2', { className: 'yk-result-title' }, 'Оплата не прошла'),
+          React.createElement('p', { className: 'yk-result-err' }, err || 'Попробуйте ещё раз'),
+          React.createElement('button', { onClick: onBack, className: 'yk-btn-secondary' }, 'Назад')
         )
       )
     );
   }
 
-  return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-    React.createElement('div', { style: { textAlign:'center', marginBottom:12 } },
-      React.createElement('p', { style: { fontSize:12, color:'#9CA3AF', margin:'0 0 2px' } }, isReplenish ? '\u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435' : '\u041f\u043e\u043a\u0443\u043f\u043a\u0430 \u0443\u0441\u043b\u0443\u0433\u0438'),
-      React.createElement('p', { style: { fontSize:24, fontWeight:800, margin:'0 0 4px' } }, amt + ' \u20bd'),
-      React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:0 } }, panFmt)
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var widgetCls = 'yk-widget-box' + (isIOS ? ' yk-ios' : '');
+
+  return React.createElement('div', { className: 'yk-wrap' },
+    React.createElement('div', { className: 'yk-header' },
+      React.createElement('p', { className: 'yk-header-label' }, isReplenish ? 'Пополнение' : 'Покупка услуги'),
+      React.createElement('p', { className: 'yk-header-amount' }, amt + ' \u20bd'),
+      React.createElement('p', { className: 'yk-header-pan' }, panFmt)
     ),
-    React.createElement('div', { id:'yk-widget-container', style: { minHeight:300, background:'#fff', borderRadius:16, overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.06)' } }),
-    React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'#9CA3AF', marginTop:8 } }, '\u042eKassa \u00b7 \u0411\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u0430\u044f \u043e\u043f\u043b\u0430\u0442\u0430')
+    React.createElement('div', { id:'yk-widget-container', className: widgetCls }),
+    React.createElement('p', { className: 'yk-footer' }, 'ЮKassa \u00b7 Безопасная оплата')
   );
 }

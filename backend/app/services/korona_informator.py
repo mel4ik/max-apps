@@ -129,6 +129,7 @@ class KoronaInformator:
     async def get_trips(self, pan: str, page: int = 0, size: int = 20) -> dict:
         """GET /v2/cards/{pan}/trips с пагинацией."""
         pan = self.validate_pan(pan)
+        korona_page = page + 1  # Корона считает с 1
         cache_key = "trips:" + pan + ":" + str(page)
 
         cached = await self._cache_get(cache_key)
@@ -139,7 +140,7 @@ class KoronaInformator:
         try:
             data = await self._api_get(
                 "/v2/cards/" + pan + "/trips",
-                params={"pageNumber": page, "pageSize": size},
+                params={"pageNumber": korona_page, "pageSize": size},
             )
             await self._cache_set(cache_key, data, settings.cache_ttl_trips)
             data["_source"] = "korona"
@@ -155,6 +156,7 @@ class KoronaInformator:
     async def get_replenishments(self, pan: str, page: int = 0, size: int = 20) -> dict:
         """GET /v2/cards/{pan}/replenishments с пагинацией."""
         pan = self.validate_pan(pan)
+        korona_page = page + 1  # Корона считает с 1
         cache_key = "repls:" + pan + ":" + str(page)
 
         cached = await self._cache_get(cache_key)
@@ -165,7 +167,7 @@ class KoronaInformator:
         try:
             data = await self._api_get(
                 "/v2/cards/" + pan + "/replenishments",
-                params={"pageNumber": page, "pageSize": size},
+                params={"pageNumber": korona_page, "pageSize": size},
             )
             await self._cache_set(cache_key, data, settings.cache_ttl_repls)
             data["_source"] = "korona"

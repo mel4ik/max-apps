@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, BackBtn } from '../components/Shared';
+import { Box } from '../components/Shared';
 
 export default function AddCard({ onBack, onAdded, bridge }) {
   const [val, setVal]       = useState('');
@@ -18,7 +18,6 @@ export default function AddCard({ onBack, onAdded, bridge }) {
     if (digits.indexOf('9643') !== 0) { setErr('Номер должен начинаться с 9643'); bridge.error(); return; }
     setLoad(true); setErr('');
     bridge.haptic('medium');
-    // Реальный вызов — App.handleAdded вызовет api.addCard
     setTimeout(() => { setLoad(false); onAdded(digits); bridge.success(); }, 800);
   }
 
@@ -35,57 +34,39 @@ export default function AddCard({ onBack, onAdded, bridge }) {
     } catch {}
   }
 
-  return (
-    <div style={{ padding:'10px 14px 16px' }}>
-      <Box>
-        <h2 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>Добавить карту</h2>
-        <p style={{ fontSize:12, color:'#9CA3AF', margin:'0 0 16px' }}>Введите 19-значный номер ЕТК или отсканируйте QR</p>
+  var inputCls = 'ac-input' + (err ? ' error' : valid ? ' valid' : '');
 
-        <p style={{ fontSize:10, fontWeight:700, color:'#6B7280', margin:'0 0 6px', letterSpacing:0.5 }}>НОМЕР КАРТЫ</p>
-        <div style={{ display:'flex', gap:8, marginBottom:8 }}>
+  return (
+    <div className="ac-wrap">
+      <Box>
+        <h2 className="ac-title">Добавить карту</h2>
+        <p className="ac-subtitle">Введите 19-значный номер ЕТК или отсканируйте QR</p>
+
+        <p className="ac-field-label">НОМЕР КАРТЫ</p>
+        <div className="ac-input-row">
           <input
             ref={ref} value={display}
             onChange={e => { setVal(e.target.value); setErr(''); }}
             placeholder="9643" maxLength={23} inputMode="numeric"
-            style={{
-              flex:1, padding:14, fontSize:17, fontWeight:600,
-              fontFamily:'inherit', background:'#F0F2F8',
-              border:`2px solid ${err ? '#F04438' : valid ? '#00A651' : '#E5E7EB'}`,
-              borderRadius:12, outline:'none', color:'#0F1729', letterSpacing:1
-            }}
+            className={inputCls}
           />
-          <button onClick={handleScan} style={{
-            width:52, height:52, flexShrink:0,
-            display:'flex', alignItems:'center', justifyContent:'center',
-            background:'#F0F2F8', border:'2px solid #E5E7EB',
-            borderRadius:12, color:'#1B6EF3', cursor:'pointer', fontSize:20
-          }}>📷</button>
+          <button onClick={handleScan} className="ac-scan-btn">📷</button>
         </div>
 
-        {err && <p style={{ fontSize:12, color:'#F04438', margin:'0 0 8px', fontWeight:500 }}>{err}</p>}
-        {valid && !err && <p style={{ fontSize:12, color:'#00A651', margin:'0 0 8px', fontWeight:500 }}>✓ Формат верный</p>}
+        {err && <p className="ac-error-msg">{err}</p>}
+        {valid && !err && <p className="ac-valid-msg">✓ Формат верный</p>}
 
         {/* Card preview */}
-        <div style={{
-          position:'relative',
-          background:'linear-gradient(135deg,#FF6B00,#FF9248,#FFB347)',
-          borderRadius:16, padding:'20px 16px', marginBottom:16,
-          overflow:'hidden', opacity: digits.length > 0 ? 1 : 0.35
-        }}>
-          <div style={{ position:'absolute', top:-25, right:-25, width:100, height:100, borderRadius:'50%', background:'rgba(255,255,255,0.15)' }} />
-          <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:2, margin:'0 0 16px' }}>ЕТК</p>
-          <p style={{ fontSize:18, fontWeight:700, color:'#fff', letterSpacing:1.5, margin:'0 0 6px' }}>
+        <div className="ac-preview" style={{ opacity: digits.length > 0 ? 1 : 0.35 }}>
+          <div className="ac-preview-circle" />
+          <p className="ac-preview-label">ЕТК</p>
+          <p className="ac-preview-pan">
             {digits.length > 0 ? display : '9643 •••• •••• •••• •••'}
           </p>
-          <p style={{ fontSize:11, color:'rgba(255,255,255,0.5)', margin:0 }}>Единая транспортная карта</p>
+          <p className="ac-preview-desc">Единая транспортная карта</p>
         </div>
 
-        <button onClick={handleAdd} disabled={loading || !valid} style={{
-          width:'100%', padding:15, fontSize:15, fontWeight:700,
-          fontFamily:'inherit', color:'#fff', background:'#1B6EF3',
-          border:'none', borderRadius:12, cursor:'pointer',
-          opacity: loading || !valid ? 0.5 : 1
-        }}>
+        <button onClick={handleAdd} disabled={loading || !valid} className="ac-submit-btn">
           {loading ? 'Проверяем...' : 'Добавить карту'}
         </button>
       </Box>

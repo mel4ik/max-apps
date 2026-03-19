@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, BackBtn } from '../components/Shared';
+import { Box } from '../components/Shared';
 import { fk, sd } from '../api/helpers';
 import * as api from '../api/client';
 
@@ -18,11 +18,10 @@ export default function BuyService({ card: c, onBack, onPay }) {
   }, [c.id]);
 
   if (loading) {
-    return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      
+    return React.createElement('div', { className: 'bs-wrap' },
       React.createElement(Box, null,
         React.createElement('div', { style: { textAlign:'center', padding:'32px 0' } },
-          React.createElement('div', { style: { width:24, height:24, border:'2px solid #E5E7EB', borderTopColor:'#7C3AED', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
+          React.createElement('div', { className: 'bs-spinner' })
         )
       )
     );
@@ -31,10 +30,9 @@ export default function BuyService({ card: c, onBack, onPay }) {
   var sp = ops && ops.servicePurchase;
   if (!sp || !sp.allowed || !sp.services || sp.services.length === 0) {
     var reason = sp && sp.denyReason ? sp.denyReason.description : 'Покупка услуг недоступна';
-    return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      
+    return React.createElement('div', { className: 'bs-wrap' },
       React.createElement(Box, null,
-        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, '\uD83D\uDEAB ', reason)
+        React.createElement('p', { className: 'bs-blocked' }, '\uD83D\uDEAB ', reason)
       )
     );
   }
@@ -55,11 +53,10 @@ export default function BuyService({ card: c, onBack, onPay }) {
     });
   }
 
-  return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-    
+  return React.createElement('div', { className: 'bs-wrap' },
     React.createElement(Box, null,
-      React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Покупка услуги'),
-      React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 12px' } },
+      React.createElement('h2', { className: 'bs-title' }, 'Покупка услуги'),
+      React.createElement('p', { className: 'bs-subtitle' },
         '\u2022\u2022\u2022\u2022 ', (c.card_pan || '').slice(-4)
       ),
       services.map(function(svc) {
@@ -69,30 +66,22 @@ export default function BuyService({ card: c, onBack, onPay }) {
         return React.createElement('button', {
           key: svc.serviceId,
           onClick: function() { setSelected(svc.serviceId); },
-          style: {
-            display:'flex', alignItems:'center', width:'100%', padding:12,
-            background: isSelected ? '#F9F5FF' : '#F8F9FC',
-            border: isSelected ? '2px solid #7C3AED' : '2px solid transparent',
-            borderRadius:12, cursor:'pointer', fontFamily:'inherit', textAlign:'left', marginBottom:6
-          }
+          className: 'bs-service-btn' + (isSelected ? ' selected' : '')
         },
           React.createElement('div', { style: { flex:1 } },
-            React.createElement('p', { style: { fontSize:14, fontWeight:700, margin:'0 0 2px' } }, desc.textNote || 'Услуга'),
-            React.createElement('p', { style: { fontSize:11, color:'#6B7280', margin:0 } },
+            React.createElement('p', { className: 'bs-service-name' }, desc.textNote || 'Услуга'),
+            React.createElement('p', { className: 'bs-service-info' },
               sd(ar.startDate), ' \u2013 ', sd(ar.endDate),
               desc.intervalAmount ? ' \u00b7 ' + desc.intervalAmount + (desc.intervalLength === 'M' ? ' мес.' : ' дн.') : ''
             )
           ),
-          React.createElement('p', { style: { fontSize:16, fontWeight:800, color:'#7C3AED', margin:0, flexShrink:0 } }, fk(svc.cost), ' \u20bd')
+          React.createElement('p', { className: 'bs-service-cost' }, fk(svc.cost), ' \u20bd')
         );
       }),
-      err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'8px 0 0', fontWeight:600 } }, '\u26a0 ', err),
-      sel && React.createElement('button', { onClick: handlePay, disabled: paying, style: {
-        width:'100%', padding:14, fontSize:14, fontWeight:700, fontFamily:'inherit',
-        color:'#fff', background:'linear-gradient(135deg,#7C3AED,#5B21B6)',
-        border:'none', borderRadius:12, cursor:'pointer', marginTop:10,
-        opacity: paying ? 0.5 : 1
-      } }, paying ? 'Создаём платёж...' : 'Оплатить ' + fk(sel.cost) + ' \u20bd')
+      err && React.createElement('p', { className: 'bs-error' }, '\u26a0 ', err),
+      sel && React.createElement('button', { onClick: handlePay, disabled: paying, className: 'bs-pay-btn' },
+        paying ? 'Создаём платёж...' : 'Оплатить ' + fk(sel.cost) + ' \u20bd'
+      )
     )
   );
 }

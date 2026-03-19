@@ -187,7 +187,7 @@ async def get_card_info(
 async def get_trips(
     card_id: str,
     page: int = Query(0, ge=0),
-    size: int = Query(20, ge=1, le=50),
+    size: int = Query(100, ge=1, le=100),
     user: User = Depends(get_max_user),
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),
@@ -206,7 +206,7 @@ async def get_trips(
 async def get_replenishments(
     card_id: str,
     page: int = Query(0, ge=0),
-    size: int = Query(20, ge=1, le=50),
+    size: int = Query(100, ge=1, le=100),
     user: User = Depends(get_max_user),
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),

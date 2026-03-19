@@ -49,6 +49,90 @@ async def _get_user_card(card_id: str, user_id: int, db: AsyncSession) -> Card:
     return card
 
 
+# ═══════════════════════════════════════
+# Подтверждение в Короне (с блокировкой)
+# ═══════════════════════════════════════
+
+async def _confirm_in_korona(invoice_id, db: AsyncSession) -> Invoice:
+    """
+    Подтверждает счёт в Короне с SELECT FOR UPDATE.
+    Гарантирует что только один запрос (webhook или polling)
+    отправит confirm в Корону.
+    """
+    # Блокируем строку — второй запрос будет ждать
+    result = await db.execute(
+        select(Invoice)
+        .where(Invoice.id == invoice_id)
+        .with_for_update()
+    )
+    inv = result.scalar_one_or_none()
+    if not inv:
+        return None
+
+    # Уже подтверждён или в терминальном состоянии — ничего не делаем
+    if inv.korona_status in ("PAID", "CANCELED", "ERROR"):
+        log.info(f"Invoice {inv.id}: Корона уже {inv.korona_status}, пропускаем")
+        return inv
+
+    korona_data = inv.korona_response or {}
+    korona_invoice_id = korona_data.get("invoiceId")
+    agent_tx_id = korona_data.get("agentTransactionId")
+
+    if not korona_invoice_id:
+        inv.status = "FAILED"
+        inv.error_message = "Нет invoiceId от Короны"
+        await db.commit()
+        return inv
+
+    repl = get_replenisher()
+    try:
+        result_korona = await repl.confirm_invoice(korona_invoice_id, agent_tx_id)
+        inv.status = "PAID"
+        inv.korona_status = "PAID"
+        inv.korona_response = result_korona
+        inv.error_message = None  # Очищаем ошибку если была
+        log.info(f"Invoice {inv.id}: подтверждён в Короне")
+    except ReplenisherError as e:
+        inv.status = "FAILED"
+        inv.korona_status = "ERROR"
+        inv.error_message = f"Корона: {e.message}"
+        log.error(f"Invoice {inv.id}: ошибка подтверждения в Короне: {e.message}")
+
+    await db.commit()
+    return inv
+
+
+async def _cancel_in_korona(invoice_id, db: AsyncSession) -> Invoice:
+    """Отменяет счёт в Короне с блокировкой."""
+    result = await db.execute(
+        select(Invoice)
+        .where(Invoice.id == invoice_id)
+        .with_for_update()
+    )
+    inv = result.scalar_one_or_none()
+    if not inv:
+        return None
+
+    if inv.korona_status in ("PAID", "CANCELED"):
+        return inv
+
+    korona_data = inv.korona_response or {}
+    korona_invoice_id = korona_data.get("invoiceId")
+    agent_tx_id = korona_data.get("agentTransactionId")
+
+    repl = get_replenisher()
+    try:
+        result_korona = await repl.cancel_invoice(korona_invoice_id, agent_tx_id)
+        inv.korona_status = "CANCELED"
+        inv.korona_response = result_korona
+    except Exception as e:
+        inv.error_message = f"Корона отмена: {str(e)}"
+    inv.status = "CANCELED"
+
+    await db.commit()
+    return inv
+
+
 # ─── Доступные операции ───
 
 @router.get("/cards/{card_id}/operations")
@@ -224,9 +308,8 @@ async def yukassa_webhook(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    ЮKassa отправляет уведомление о статусе платежа.
-    При succeeded → подтверждаем в Короне (PAID).
-    При canceled → отменяем в Короне (CANCELED).
+    ЮKassa webhook → подтверждение/отмена в Короне.
+    Использует SELECT FOR UPDATE — безопасно при параллельных запросах.
     """
     body = await request.json()
     event = body.get("event", "")
@@ -248,48 +331,20 @@ async def yukassa_webhook(
         log.warning(f"YuKassa webhook: invoice not found for payment {payment_id}")
         return {"ok": True}
 
+    # Уже в терминальном состоянии — пропускаем
     if inv.status in ("PAID", "CANCELED", "FAILED"):
-        log.info(f"Invoice {inv.id} already in terminal state: {inv.status}")
+        log.info(f"Invoice {inv.id}: уже {inv.status}, пропуск webhook")
         return {"ok": True}
 
+    # Обновляем статус ЮKassa
     inv.yukassa_status = status
-    korona_data = inv.korona_response or {}
-    korona_invoice_id = korona_data.get("invoiceId")
-    agent_tx_id = korona_data.get("agentTransactionId")
-
-    repl = get_replenisher()
-
-    if status == "succeeded" and korona_invoice_id:
-        # Подтверждаем в Короне
-        try:
-            result_korona = await repl.confirm_invoice(korona_invoice_id, agent_tx_id)
-            inv.status = "PAID"
-            inv.korona_status = "PAID"
-            inv.korona_response = result_korona
-            log.info(f"Invoice {inv.id} confirmed in Korona")
-        except ReplenisherError as e:
-            inv.status = "FAILED"
-            inv.korona_status = "ERROR"
-            inv.error_message = f"Korona confirm error: {e.message}"
-            log.error(f"Invoice {inv.id} Korona confirm failed: {e.message}")
-
-            try:
-                notify_text = format_payment_failed(inv.amount, inv.card_pan or '', e.message)
-                await send_message(str(inv.user_id), notify_text)
-            except Exception as ne:
-                log.warning(f"Push notify failed: {ne}")
-
-    elif status in ("canceled", "cancelled"):
-        # Отменяем в Короне
-        try:
-            result_korona = await repl.cancel_invoice(korona_invoice_id, agent_tx_id)
-            inv.korona_status = "CANCELED"
-            inv.korona_response = result_korona
-        except Exception as e:
-            inv.error_message = f"Korona cancel error: {str(e)}"
-        inv.status = "CANCELED"
-
     await db.commit()
+
+    if status == "succeeded":
+        await _confirm_in_korona(inv.id, db)
+    elif status in ("canceled", "cancelled"):
+        await _cancel_in_korona(inv.id, db)
+
     return {"ok": True}
 
 
@@ -315,38 +370,15 @@ async def check_invoice_status(
             yk_data = await yk.get_payment(inv.yukassa_id)
             yk_status = yk_data.get("status")
             inv.yukassa_status = yk_status
+            await db.commit()
 
             if yk_status == "succeeded" and inv.korona_status == "CREATED":
-                # Webhook не пришёл, подтверждаем вручную
-                korona_data = inv.korona_response or {}
-                repl = get_replenisher()
-                try:
-                    result_korona = await repl.confirm_invoice(
-                        korona_data["invoiceId"],
-                        korona_data["agentTransactionId"],
-                    )
-                    inv.status = "PAID"
-                    inv.korona_status = "PAID"
-                    inv.korona_response = result_korona
-                except ReplenisherError as e:
-                    inv.status = "FAILED"
-                    inv.korona_status = "ERROR"
-                    inv.error_message = e.message
+                # Webhook не пришёл, подтверждаем через lock
+                inv = await _confirm_in_korona(inv.id, db)
 
             elif yk_status in ("canceled", "cancelled"):
-                korona_data = inv.korona_response or {}
-                repl = get_replenisher()
-                try:
-                    await repl.cancel_invoice(
-                        korona_data["invoiceId"],
-                        korona_data["agentTransactionId"],
-                    )
-                except Exception:
-                    pass
-                inv.status = "CANCELED"
-                inv.korona_status = "CANCELED"
+                inv = await _cancel_in_korona(inv.id, db)
 
-            await db.commit()
         except Exception as e:
             log.warning(f"YuKassa check error: {e}")
 

@@ -3,7 +3,7 @@
 Мини-приложение для мессенджера MAX. Управление транспортными картами ЕТК, пополнение баланса и покупка услуг через API «Корона Информатор» + «Корона Replenisher» + ЮKassa.
 
 **Домен:** `https://app.tkpay.ru`
-**Админка:** `https://app.tkpay.ru/admin`
+**Админка:** `https://app.tkpay.ru/admin/` (SQLAdmin)
 **Репозиторий:** `https://github.com/mel4ik/max-apps`
 
 ---
@@ -13,7 +13,7 @@
 [MAX мессенджер]
       ↓ WebApp Bridge (initData → HMAC-SHA256)
 [Фронтенд React/Vite — nginx :3000]
-      ↓ /api/*
+      ↓ /api/*          ↓ /admin/*
 [Бэкенд FastAPI :8000]
       ↓                          ↓                        ↓
 [Корона Informator]    [Корона Replenisher]       [ЮKassa API]
@@ -27,9 +27,10 @@
 
 | Компонент | Технология |
 |-----------|-----------|
-| Фронтенд | React 18 + Vite, CSS-переменные, адаптивная тема, Manrope |
+| Фронтенд | React 18 + Vite, CSS-переменные (data-theme), адаптивная тема, Manrope |
 | Оплата | ЮKassa embedded widget (confirmation_token) |
 | Бэкенд | FastAPI + SQLAlchemy async + Pydantic |
+| Админка | SQLAdmin 0.20 (Tabler UI), сессионная авторизация |
 | БД | PostgreSQL 16 |
 | Кэш | Redis 7 (отключён, TTL=0) |
 | Корона | Informator API + Replenisher API (mTLS) |
@@ -52,17 +53,20 @@
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── app/
-│       ├── main.py
+│       ├── main.py              ← FastAPI + SQLAdmin + middleware
 │       ├── core/
 │       │   ├── config.py        ← Settings из .env
 │       │   ├── database.py      ← AsyncSession PostgreSQL
 │       │   └── redis.py
 │       ├── api/
 │       │   ├── routes.py        ← /api/cards, /api/config/tickets
-│       │   ├── payment_routes.py ← /api/pay/* (оплата)
-│       │   └── admin_routes.py  ← /api/admin/* (админка)
+│       │   └── payment_routes.py ← /api/pay/* (оплата, webhook, polling)
+│       ├── admin/
+│       │   ├── setup.py         ← SQLAdmin: модели, авторизация, локализация
+│       │   └── templates/
+│       │       └── login.html   ← Русская страница входа
 │       ├── models/
-│       │   └── models.py        ← User, Card, CardSnapshot, Invoice
+│       │   └── models.py        ← User, Card, CardSnapshot, Invoice, Trip, Replenishment
 │       └── services/
 │           ├── korona_informator.py  ← Informator API + Keycloak
 │           ├── korona_replenisher.py ← Replenisher API (mTLS)
@@ -71,29 +75,60 @@
 │           └── max_auth.py           ← Валидация X-Max-Init-Data
 └── frontend/
     ├── Dockerfile               ← npm install (НЕ npm ci!)
-    ├── nginx.conf               ← /api/ proxy, no-cache headers
-    ├── index.html               ← MAX SDK + ЮKassa Widget SDK
+    ├── nginx.conf               ← /api/ + /admin/ proxy, HTTPS headers
+    ├── index.html               ← MAX SDK + ЮKassa Widget SDK + ранняя тема
     └── src/
-        ├── main.jsx             ← / → App, /admin → AdminPage
+        ├── main.jsx             ← Точка входа → App
         ├── App.jsx              ← Экраны: cards/add/det/top/buy/pay
         ├── api/
         │   ├── client.js        ← API + parseCardStatus + translateOp + pay API
         │   ├── helpers.js       ← fk(), sd(), ft()
         │   └── ticketConfig.js  ← Конфиг типов из /api/config/tickets
         ├── components/
-        │   ├── Shared.jsx       ← Box, BackBtn (CSS-переменные)
-        │   └── DeleteCardBtn.jsx
+        │   └── Shared.jsx       ← Box, BackBtn (CSS-классы)
         ├── hooks/
-        │   └── useMaxBridge.js
-        └── pages/
-            ├── CardList.jsx     ← Список карт (адаптивная тема, анимации)
-            ├── AddCard.jsx      ← Добавление (^9643, QR)
-            ├── CardDetail.jsx   ← Детали + операции + удаление
-            ├── TopUp.jsx        ← Пополнение (лимиты с Короны, пресеты + ввод)
-            ├── BuyService.jsx   ← Покупка услуг (из Replenisher API)
-            ├── YooKassa.jsx     ← Виджет оплаты + polling + результат
-            └── AdminPage.jsx    ← Админка (фильтры, поиск, все поля invoice)
+        │   └── useMaxBridge.js  ← Тема: MAX SDK → matchMedia → retry → themeChanged
+        ├── pages/
+        │   ├── CardList.jsx     ← Список карт (CSS-классы, адаптивная тема)
+        │   ├── AddCard.jsx      ← Добавление (^9643, QR, CSS-классы)
+        │   ├── CardDetail.jsx   ← Детали + операции с пагинацией + табы
+        │   ├── TopUp.jsx        ← Пополнение (лимиты с Короны, пресеты + ввод)
+        │   ├── BuyService.jsx   ← Покупка услуг (из Replenisher API)
+        │   └── YooKassa.jsx     ← Виджет оплаты + polling + результат
+        └── styles/
+            └── global.css       ← CSS-переменные, data-theme, классы всех компонентов
 ```
+
+---
+
+## Адаптивная тема (iOS + Android)
+
+Тема определяется через `data-theme` атрибут на `<html>` — **НЕ** через `@media (prefers-color-scheme)`, т.к. iOS WebView в MAX не поддерживает этот медиа-запрос.
+
+### Цепочка определения темы:
+1. `WebApp.colorScheme` — MAX SDK прямое значение
+2. `WebApp.themeParams.bg_color` — эвристика яркости hex-цвета
+3. URL параметр `?theme=light/dark`
+4. `matchMedia('prefers-color-scheme')` — системная тема устройства
+5. Fallback: `dark`
+
+### Двухуровневая инициализация:
+- **index.html** — ранний скрипт до React, предотвращает белую вспышку
+- **useMaxBridge.js** — React hook, retry через 100/300/600/1200ms, подписка на `themeChanged` и `matchMedia change`
+
+### Все цвета через CSS-классы:
+Ни один компонент не использует хардкод-цвета в inline styles (кроме градиентных карточек). Все цвета — через `var(--*)` в CSS-классах.
+
+---
+
+## Операции (CardDetail)
+
+### Табы
+- **🚌 Поездки** — маршрут (`№{route_num} — {route_description}`), тип транспорта + перевозчик, дата/время, эмодзи по типу (автобус/трамвай/метро)
+- **↑ Пополнения** — тип операции, дата/время, название агента, сумма
+
+### Пагинация
+Клиентская: загружаются все данные (до 100), показываются по 8 штук. Кнопка «Ещё поездки (12)» / «Ещё пополнения (5)».
 
 ---
 
@@ -111,9 +146,9 @@
 4. Фронтенд рендерит ЮKassa Widget с token
 5. Пользователь оплачивает (карта/СБП/SberPay/T-Pay)
 6. ЮKassa webhook → POST /api/pay/webhook/yukassa
-   → Бэкенд → Корона: PUT invoices/{id}/status → PAID
+   → Бэкенд → Корона: PUT invoices/{id}/status → PAID (SELECT FOR UPDATE)
    → Invoice → PAID
-7. Фронтенд polling → "Баланс пополнен!" / "Услуга подключена!"
+7. Фронтенд polling → виджет скрывается → "Баланс пополнен!"
 ```
 
 ### Покупка услуги (pack, abonement)
@@ -123,6 +158,9 @@
 3. POST /api/pay/cards/{id}/purchase { service_id }
 4-7. Аналогично пополнению
 ```
+
+### Защита от race condition
+Подтверждение в Короне через `_confirm_in_korona()` с `SELECT ... FOR UPDATE`. Webhook и polling не конфликтуют — второй запрос видит что `korona_status` уже `PAID` и пропускает.
 
 ---
 
@@ -136,8 +174,8 @@
 | POST | `/api/cards` | Добавить карту |
 | DELETE | `/api/cards/{id}` | Удалить (soft delete) |
 | GET | `/api/cards/{id}/info?force=` | Данные с Короны |
-| GET | `/api/cards/{id}/trips` | Поездки |
-| GET | `/api/cards/{id}/replenishments` | Пополнения |
+| GET | `/api/cards/{id}/trips?page=&size=` | Поездки (пагинация) |
+| GET | `/api/cards/{id}/replenishments?page=&size=` | Пополнения (пагинация) |
 | GET | `/api/config/tickets` | Конфиг типов из .env |
 
 ### Оплата (X-Max-Init-Data)
@@ -150,15 +188,16 @@
 | GET | `/api/pay/invoices/{id}/status` | Статус платежа (polling) |
 | POST | `/api/pay/webhook/yukassa` | Webhook ЮKassa |
 
-### Админка (Basic Auth + X-Secret-Key)
+### Админка
 
-| Метод | Путь | Описание |
-|-------|------|----------|
-| GET | `/api/admin/stats` | Статистика |
-| GET | `/api/admin/users` | Пользователи |
-| GET | `/api/admin/cards` | Все карты |
-| GET | `/api/admin/invoices?status=` | Платежи (фильтр по статусу) |
-| POST | `/api/admin/invoices/{id}/status` | Изменить статус |
+`https://app.tkpay.ru/admin/` — SQLAdmin (Tabler UI)
+Авторизация: `ADMIN_LOGIN` + `ADMIN_PASSWORD` из `.env`
+
+| Раздел | Описание |
+|--------|----------|
+| Пользователи | ID, имя, username, регистрация, последний визит |
+| Карты | Номер, регион, тип, активность, пополняемость |
+| Платежи | Статус, ЮKassa, Корона, сумма, ошибки (редактирование) |
 
 ---
 
@@ -216,7 +255,7 @@ CACHE_TTL_REPLS=0
 ```env
 ADMIN_LOGIN=admin
 ADMIN_PASSWORD=***
-ADMIN_SECRET_KEY=***
+SECRET_KEY=change-me-to-random-string-in-production
 ```
 
 ### MAX Bot
@@ -247,8 +286,8 @@ MAX_BOT_TOKEN=***  # Для будущих push-уведомлений
 | users | Пользователи MAX |
 | cards | Привязанные карты |
 | card_snapshots | Кэш Короны (fallback) |
-| trips | Кэш поездок |
-| replenishments | Кэш пополнений |
+| trips | Кэш поездок (fallback) |
+| replenishments | Кэш пополнений (fallback) |
 | invoices | Заказы: yukassa + korona статусы + ошибки |
 
 ---
@@ -269,9 +308,13 @@ docker compose restart backend
 
 # Логи
 docker compose logs --tail=50 backend
+docker compose logs --tail=50 frontend
 
 # Очистить Redis
 docker compose exec redis redis-cli FLUSHALL
+
+# Проверить настройки бэкенда
+docker compose exec backend python3 -c "from app.core.config import get_settings; s=get_settings(); print('login:', repr(s.admin_login))"
 ```
 
 ---
@@ -289,20 +332,24 @@ docker compose exec redis redis-cli FLUSHALL
 - [x] Покупка услуг через Replenisher API
 - [x] Оплата ЮKassa embedded widget (карта, СБП, SberPay, T-Pay)
 - [x] Webhook ЮKassa → автоподтверждение в Короне
-- [x] Polling статуса + экран результата
+- [x] SELECT FOR UPDATE — защита от race condition (webhook vs polling)
+- [x] Polling статуса + мгновенное скрытие виджета ЮKassa при PAID
 - [x] Кэш отключён (TTL=0) — всегда свежие данные
-- [x] Адаптивная тема (светлая/тёмная)
-- [x] CSS-переменные + анимации
-- [x] Админка /admin (логин + пароль + secret_key)
-- [x] Платежи в админке: полные данные, фильтры, поиск
+- [x] Адаптивная тема iOS + Android (data-theme, без prefers-color-scheme)
+- [x] Автоопределение темы: MAX SDK → themeParams → matchMedia → fallback
+- [x] Горячее переключение темы (themeChanged + matchMedia listener)
+- [x] Все inline styles → CSS-классы (iOS WebView совместимость)
+- [x] ЮKassa виджет: адаптивный фон (light/dark через color-scheme)
+- [x] Операции: табы Поездки/Пополнения + клиентская пагинация по 8
+- [x] Поездки: маршрут, транспорт, перевозчик, эмодзи
+- [x] Пополнения: название агента
+- [x] SQLAdmin — Пользователи, Карты, Платежи (русская локализация)
 - [x] Receipt 54-ФЗ (флаг YUKASSA_RECEIPT_ENABLED)
 - [x] MAX Bot token интеграция (заготовка для push)
 - [x] Docker Compose + SSL + app.tkpay.ru
 
 ## 🔜 В планах
 
-- [ ] Push-уведомления через MAX Bot (когда решится chat_id)
-- [ ] Полировка дизайна всех экранов
+- [ ] Push-уведомления через MAX Bot
 - [ ] Автоплатёж
-- [ ] Логирование запросов Короны в админке
 - [ ] Статистика платежей в админке (графики)
