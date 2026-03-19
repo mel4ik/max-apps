@@ -7,13 +7,12 @@ export function useMaxBridge() {
   useEffect(() => {
     const wa = window.WebApp;
 
-    // Определяем тему из MAX SDK
+    // Определяем тему: MAX SDK -> CSS media query -> fallback
     var cs = wa && wa.colorScheme;
-    if (cs === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else if (cs === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light');
+    if (!cs) {
+      try { cs = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } catch(e) {}
     }
+    document.documentElement.setAttribute('data-theme', cs || 'dark');
     if (!wa) { setReady(true); return; }
     wa.ready();
     setReady(true);
