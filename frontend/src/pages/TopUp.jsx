@@ -25,7 +25,7 @@ export default function TopUp({ card: c, onBack, onPay }) {
       
       React.createElement(Box, null,
         React.createElement('div', { style: { textAlign:'center', padding:'32px 0' } },
-          React.createElement('div', { style: { width:24, height:24, border:'2px solid #E5E7EB', borderTopColor:'#1B6EF3', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
+          React.createElement('div', { style: { width:24, height:24, border:'2px solid var(--border, #E5E7EB)', borderTopColor:'#1B6EF3', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
         )
       )
     );
@@ -86,14 +86,14 @@ export default function TopUp({ card: c, onBack, onPay }) {
     
     React.createElement(Box, null,
       React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Пополнение'),
-      React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 4px' } },
+      React.createElement('p', { style: { fontSize:11, color:'var(--text-hint, #9CA3AF)', margin:'0 0 4px' } },
         (c.card_pan || '').replace(/(.{4})/g, '$1 ').trim(), ' \u00b7 Баланс: ', fk(bal), ' \u20bd'
       ),
-      React.createElement('p', { style: { fontSize:11, color:'#9CA3AF', margin:'0 0 14px' } },
+      React.createElement('p', { style: { fontSize:11, color:'var(--text-hint, #9CA3AF)', margin:'0 0 14px' } },
         'Не менее ', mn, ' \u20bd \u00b7 Не более ', mx, ' \u20bd'
       ),
       presets.length > 0 && React.createElement('div', null,
-        React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'#6B7280', margin:'0 0 6px' } }, 'Выберите сумму'),
+        React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'var(--text-sec, #6B7280)', margin:'0 0 6px' } }, 'Выберите сумму'),
         React.createElement('div', { style: { display:'grid', gridTemplateColumns:'repeat('+Math.min(presets.length, 4)+',1fr)', gap:6, marginBottom:14 } },
           presets.map(function(a) {
             var isActive = custom === '' && selected === a;
@@ -104,11 +104,11 @@ export default function TopUp({ card: c, onBack, onPay }) {
           })
         )
       ),
-      React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'#6B7280', margin:'0 0 6px' } }, 'Или введите сумму'),
+      React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'var(--text-sec, #6B7280)', margin:'0 0 6px' } }, 'Или введите сумму'),
       React.createElement('input', {
         type: 'text', inputMode: 'numeric', value: custom, onChange: onCustomChange,
         placeholder: mn + ' \u2013 ' + mx + ' \u20bd',
-        style: { width:'100%', padding:'14px 14px', fontSize:18, fontWeight:700, fontFamily:'inherit', background:'#F0F2F8', border: '2px solid ' + (custom !== '' && !ok ? '#F04438' : custom !== '' && ok ? '#00A651' : '#E5E7EB'), borderRadius:12, outline:'none', color:'#0F1729', marginBottom: 4, boxSizing:'border-box', textAlign:'center' }
+        style: { width:'100%', padding:'14px 14px', fontSize:18, fontWeight:700, fontFamily:'inherit', background:'var(--input-bg, #F0F2F8)', border: '2px solid ' + (custom !== '' && !ok ? '#F04438' : custom !== '' && ok ? '#00A651' : '#E5E7EB'), borderRadius:12, outline:'none', color:'var(--text, #0F1729)', marginBottom: 4, boxSizing:'border-box', textAlign:'center' }
       }),
       custom !== '' && !ok && React.createElement('p', { style: { fontSize:11, color:'#F04438', margin:'0 0 8px', textAlign:'center' } }, activeSum < mn ? 'Минимум ' + mn + ' \u20bd' : 'Максимум ' + mx + ' \u20bd'),
       custom !== '' && ok && React.createElement('p', { style: { fontSize:11, color:'#00A651', margin:'0 0 8px', textAlign:'center' } }, '\u2713 Сумма корректна'),
@@ -118,7 +118,7 @@ export default function TopUp({ card: c, onBack, onPay }) {
         onClick: handlePay, disabled: !ok || paying,
         style: { width:'100%', padding:15, fontSize:15, fontWeight:700, fontFamily:'inherit', color:'#fff', background: ok ? 'linear-gradient(135deg,#FF6B00,#E85D00)' : '#ccc', border:'none', borderRadius:12, cursor: ok ? 'pointer' : 'default', opacity: paying ? 0.5 : 1 }
       }, paying ? 'Создаём платёж...' : ok ? 'Оплатить ' + activeSum + ' \u20bd' : 'Выберите сумму'),
-      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'#9CA3AF', marginTop:8 } }, '\u042eKassa \u00b7 карта, СБП, SberPay, T-Pay')
+      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'var(--text-hint, #9CA3AF)', marginTop:8 } }, '\u042eKassa \u00b7 карта, СБП, SberPay, T-Pay')
     )
   );
 }
