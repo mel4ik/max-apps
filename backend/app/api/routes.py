@@ -96,11 +96,23 @@ async def add_card(
         select(Card).where(
             Card.user_id == user.id,
             Card.card_pan == req.card_pan,
-            Card.is_active == True,
         )
     )
-    if existing.scalar_one_or_none():
-        raise HTTPException(400, "Эта карта уже добавлена")
+    existing_card = existing.scalar_one_or_none()
+    if existing_card:
+        if existing_card.is_active:
+            raise HTTPException(400, "Эта карта уже добавлена")
+        # Реактивация удалённой карты
+        existing_card.is_active = True
+        await db.commit()
+        await db.refresh(existing_card)
+        log.info("Card reactivated: %s for user %s", req.card_pan[:8] + "...", user.id)
+        return {
+            "id": str(existing_card.id),
+            "card_pan": existing_card.card_pan,
+            "region": existing_card.region,
+            "ticket_description": existing_card.ticket_description,
+        }
 
     # Проверяем в Короне
     korona = KoronaInformator(db, redis)
