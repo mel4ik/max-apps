@@ -6,6 +6,14 @@ export function useMaxBridge() {
 
   useEffect(() => {
     const wa = window.WebApp;
+
+    // Определяем тему из MAX SDK
+    var cs = wa && wa.colorScheme;
+    if (cs === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (cs === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
     if (!wa) { setReady(true); return; }
     wa.ready();
     setReady(true);

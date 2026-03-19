@@ -170,3 +170,51 @@ input:focus {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* --- Темная тема через MAX SDK --- */
+html[data-theme="dark"] {
+    --bg: #0F1729;
+    --bg-elevated: #1A2744;
+    --card: #1E2D4A;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3);
+    --card-hover: 0 2px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.4);
+    --header-bg: linear-gradient(135deg,#0A1020,#0F1729);
+    --text: #F0F2F8;
+    --text-sec: #9CA3AF;
+    --text-hint: #6B7280;
+    --border: #2D3A54;
+    --border-light: #243049;
+    --input-bg: #243049;
+    --input-focus: #2D3A54;
+    --tag-bg: #243049;
+    --overlay: rgba(0,0,0,0.6);
+    --blue-bg: #1B3A6B;
+    --orange-light: #3D2A10;
+    --purple-bg: #2A1B4E;
+    --green-bg: #0A3320;
+    --red-bg: #3D1515;
+    --yellow-bg: #3D2F10;
+    --shadow-btn: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* --- Светлая тема принудительно --- */
+html[data-theme="light"] {
+    --bg: #F4F6FA;
+    --bg-elevated: #FFFFFF;
+    --card: #FFFFFF;
+    --card-shadow: 0 1px 3px rgba(15,23,41,0.04), 0 4px 12px rgba(15,23,41,0.06);
+    --text: #0F1729;
+    --text-sec: #6B7280;
+    --text-hint: #9CA3AF;
+    --border: #E5E7EB;
+    --border-light: #F0F2F8;
+    --input-bg: #F0F2F8;
+    --input-focus: #E8F0FE;
+    --tag-bg: #F0F2F8;
+    --blue-bg: #E8F0FE;
+    --orange-light: #FFF3E8;
+    --purple-bg: #F9F5FF;
+    --green-bg: #E5FBF0;
+    --red-bg: #FEE4E2;
+    --yellow-bg: #FFF8EB;
+}
