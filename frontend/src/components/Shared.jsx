@@ -2,15 +2,8 @@ import React from 'react';
 
 export function Box({ children, style }) {
   return React.createElement('div', {
-    className: 'fade-in',
-    style: Object.assign({
-      background: 'var(--card)',
-      borderRadius: 'var(--radius-lg)',
-      padding: '16px 14px',
-      boxShadow: 'var(--card-shadow)',
-      marginBottom: 10,
-      transition: 'background 0.2s, box-shadow 0.2s',
-    }, style || {})
+    className: 'box-card fade-in',
+    style: style || {}
   }, children);
 }
 
@@ -20,7 +13,7 @@ export function BackBtn({ onClick }) {
     style: {
       display: 'flex', alignItems: 'center', gap: 4,
       background: 'none', border: 'none',
-      color: 'var(--blue)', fontSize: 14, fontWeight: 600,
+      color: '#1B6EF3', fontSize: 14, fontWeight: 600,
       fontFamily: 'inherit', cursor: 'pointer',
       padding: '3px 0', marginBottom: 8,
     }
