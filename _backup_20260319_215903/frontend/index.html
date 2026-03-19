@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0F1729" />
+    <title>Часпик Транспорт</title>
+    <script src="https://st.max.ru/js/max-web-app.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://yookassa.ru/checkout-widget/v1/checkout-widget.js"></script>
+<script>
+(function(){
+  /* Раннее определение темы — до React */
+  function apply(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    var bg = t === 'dark' ? '#0F1729' : '#F4F6FA';
+    document.documentElement.style.background = bg;
+    if (document.body) document.body.style.background = bg;
+    var mc = document.querySelector('meta[name="theme-color"]');
+    if (mc) mc.setAttribute('content', bg);
+  }
+
+  function detect() {
+    var wa = window.WebApp;
+    /* 1. MAX SDK colorScheme */
+    if (wa && (wa.colorScheme === 'light' || wa.colorScheme === 'dark')) return wa.colorScheme;
+    /* 2. MAX SDK themeParams.bg_color — эвристика яркости */
+    if (wa && wa.themeParams && wa.themeParams.bg_color) {
+      var h = wa.themeParams.bg_color.replace('#','');
+      if (h.length === 6) {
+        var r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+        if ((r*299+g*587+b*114)/1000 > 128) return 'light';
+        return 'dark';
+      }
+    }
+    /* 3. initData в URL — MAX передаёт ?theme=light/dark */
+    try {
+      var sp = new URLSearchParams(window.location.search);
+      if (sp.get('theme') === 'light' || sp.get('theme') === 'dark') return sp.get('theme');
+    } catch(e){}
+    /* 4. prefers-color-scheme — системная тема устройства */
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+    /* 5. Fallback */
+    return 'dark';
+  }
+
+  apply(detect());
+
+  /* Повторная проверка через 100ms — SDK может инициализироваться с задержкой */
+  setTimeout(function(){ apply(detect()); }, 100);
+  setTimeout(function(){ apply(detect()); }, 300);
+})();
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx?v=4"></script>
+  </body>
+</html>

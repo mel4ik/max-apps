@@ -230,7 +230,6 @@ input:focus { box-shadow: 0 0 0 3px rgba(27,110,243,0.15); }
 .cd-actions { display:flex; gap:8px; margin-bottom:10px; }
 .cd-pay-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:13px; font-size:13px; font-weight:700; font-family:inherit; color:#fff; background:#FF6B00; border:none; border-radius:12px; cursor:pointer; }
 .cd-no-pay { flex:1; display:flex; align-items:center; justify-content:center; padding:13px; font-size:12px; font-weight:600; color:var(--text-hint); background:var(--card); border-radius:12px; }
-.cd-no-pay.cd-blocked { color:#F04438; background:var(--red-bg); }
 .cd-icon-btn { width:44px; display:flex; align-items:center; justify-content:center; padding:12px; font-size:16px; font-family:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--border); border-radius:12px; cursor:pointer; }
 .cd-icon-btn.delete { color:var(--text-hint); }
 .cd-icon-btn.delete-confirm { color:#F04438; background:#3D1515; border-color:#FECACA; }

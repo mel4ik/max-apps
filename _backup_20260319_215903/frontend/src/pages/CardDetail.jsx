@@ -129,9 +129,8 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
 
     // ── Кнопки действий ──
     React.createElement('div', { className: 'cd-actions' },
-      canPay && payType !== 'none' && !dp.blocked && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
-      dp.blocked && React.createElement('div', { className: 'cd-no-pay cd-blocked' }, '\u26d4 \u041a\u0430\u0440\u0442\u0430 \u0437\u0430\u0431\u043b\u043e\u043a\u0438\u0440\u043e\u0432\u0430\u043d\u0430'),
-      !canPay && !dp.blocked && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
+      canPay && payType !== 'none' && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
+      !canPay && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
       React.createElement('button', { onClick: doRefresh, className: 'cd-icon-btn' }, refreshing ? '\u23f3' : '\u21bb'),
       React.createElement('button', {
         onClick: doDelete, disabled: delLoad,
