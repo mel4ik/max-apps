@@ -26,7 +26,7 @@ export default function YooKassa({ card, amt, svc, onBack, onDone, bridge }) {
             if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
             bridge.success();
             clearInterval(checkRef.current);
-            onDone();
+            setStatus('done');
             return;
           } else if (res.status === 'CANCELED' || res.status === 'FAILED') {
             if (widgetRef.current && widgetRef.current.destroy) { try { widgetRef.current.destroy(); } catch(e) {} widgetRef.current = null; }
