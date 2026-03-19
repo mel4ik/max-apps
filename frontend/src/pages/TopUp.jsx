@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, BackBtn } from '../components/Shared';
+import { Box } from '../components/Shared';
 import { fk } from '../api/helpers';
 import * as api from '../api/client';
 
@@ -15,17 +15,16 @@ export default function TopUp({ card: c, onBack, onPay }) {
 
   useEffect(function() {
     setLoading(true);
-    api.getOperations(c.id).then(function(data) {
-      setOps(data);
-    }).catch(function(e) { setErr(e.message); }).finally(function() { setLoading(false); });
+    api.getOperations(c.id).then(function(data) { setOps(data); })
+      .catch(function(e) { setErr(e.message); })
+      .finally(function() { setLoading(false); });
   }, [c.id]);
 
   if (loading) {
-    return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      
+    return React.createElement('div', { className:'tu-wrap' },
       React.createElement(Box, null,
-        React.createElement('div', { style: { textAlign:'center', padding:'32px 0' } },
-          React.createElement('div', { style: { width:24, height:24, border:'2px solid var(--border, #E5E7EB)', borderTopColor:'#1B6EF3', borderRadius:'50%', margin:'0 auto', animation:'spin 0.6s linear infinite' } })
+        React.createElement('div', { style:{textAlign:'center',padding:'32px 0'} },
+          React.createElement('div', { className:'tu-spinner' })
         )
       )
     );
@@ -34,91 +33,68 @@ export default function TopUp({ card: c, onBack, onPay }) {
   var repl = ops && ops.counterReplenishment;
   if (!repl || !repl.allowed) {
     var reason = repl && repl.denyReason ? repl.denyReason.description : 'Пополнение недоступно';
-    return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-      
+    return React.createElement('div', { className:'tu-wrap' },
       React.createElement(Box, null,
-        React.createElement('p', { style: { fontSize:14, fontWeight:600, color:'#F04438', textAlign:'center', padding:'20px 0' } }, 'Пополнение недоступно: ', reason)
+        React.createElement('p', { className:'tu-blocked' }, '\ud83d\udeab ', reason)
       )
     );
   }
 
   var restr = repl.restriction.value;
-  var mnKop = restr.minAmount;
-  var mxKop = restr.maxAmount;
-  var mn = Math.ceil(mnKop / 100);
-  var mx = Math.floor(mxKop / 100);
+  var mn = Math.ceil(restr.minAmount / 100);
+  var mx = Math.floor(restr.maxAmount / 100);
   var bal = ops.cardAccount ? ops.cardAccount.balanceAmount : (p.bal || 0);
   var allPresets = cfg.replPresets || [200, 500, 1000, 1500];
   var presets = allPresets.filter(function(v) { return v >= mn && v <= mx; });
   var activeSum = 0;
-  if (custom !== '') {
-    activeSum = parseInt(custom) || 0;
-  } else if (selected !== null) {
-    activeSum = selected;
-  }
+  if (custom !== '') { activeSum = parseInt(custom) || 0; }
+  else if (selected !== null) { activeSum = selected; }
   var ok = activeSum >= mn && activeSum <= mx;
 
-  function selectPreset(v) {
-    setSelected(v);
-    setCustom('');
-  }
-
-  function onCustomChange(e) {
-    var val = e.target.value.replace(/\D/g, '');
-    setCustom(val);
-    setSelected(null);
-  }
+  function selectPreset(v) { setSelected(v); setCustom(''); }
+  function onCustomChange(e) { var val = e.target.value.replace(/\D/g, ''); setCustom(val); setSelected(null); }
 
   function handlePay() {
     if (!ok || paying) return;
-    setPaying(true);
-    setErr('');
+    setPaying(true); setErr('');
     api.createReplenishment(c.id, activeSum * 100, 'VALUE').then(function(res) {
       window._ykToken = res.confirmation_token;
       onPay(activeSum, res.invoice_id);
-    }).catch(function(e) {
-      setErr(e.message);
-      setPaying(false);
-    });
+    }).catch(function(e) { setErr(e.message); setPaying(false); });
   }
 
-  return React.createElement('div', { style: { padding:'10px 14px 16px' } },
-    
+  var panFmt = (c.card_pan || '').replace(/(.{4})/g, '$1 ').trim();
+  var gridCls = 'tu-grid tu-grid' + Math.min(presets.length, 4);
+
+  return React.createElement('div', { className:'tu-wrap' },
     React.createElement(Box, null,
-      React.createElement('h2', { style: { fontSize:17, fontWeight:800, margin:'0 0 4px' } }, 'Пополнение'),
-      React.createElement('p', { style: { fontSize:11, color:'var(--text-hint, #9CA3AF)', margin:'0 0 4px' } },
-        (c.card_pan || '').replace(/(.{4})/g, '$1 ').trim(), ' \u00b7 Баланс: ', fk(bal), ' \u20bd'
-      ),
-      React.createElement('p', { style: { fontSize:11, color:'var(--text-hint, #9CA3AF)', margin:'0 0 14px' } },
-        'Не менее ', mn, ' \u20bd \u00b7 Не более ', mx, ' \u20bd'
-      ),
+      React.createElement('h2', { className:'tu-title' }, '\u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435'),
+      React.createElement('p', { className:'tu-sub' }, panFmt, ' \u00b7 \u0411\u0430\u043b\u0430\u043d\u0441: ', fk(bal), ' \u20bd'),
+      React.createElement('p', { className:'tu-limit' }, '\u041d\u0435 \u043c\u0435\u043d\u0435\u0435 ', mn, ' \u20bd \u00b7 \u041d\u0435 \u0431\u043e\u043b\u0435\u0435 ', mx, ' \u20bd'),
       presets.length > 0 && React.createElement('div', null,
-        React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'var(--text-sec, #6B7280)', margin:'0 0 6px' } }, 'Выберите сумму'),
-        React.createElement('div', { style: { display:'grid', gridTemplateColumns:'repeat('+Math.min(presets.length, 4)+',1fr)', gap:6, marginBottom:14 } },
+        React.createElement('p', { className:'tu-label' }, '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u0443\u043c\u043c\u0443'),
+        React.createElement('div', { className: gridCls },
           presets.map(function(a) {
-            var isActive = custom === '' && selected === a;
-            return React.createElement('button', {
-              key: a, onClick: function() { selectPreset(a); },
-              style: { padding:'12px 0', fontSize:15, fontWeight:700, fontFamily:'inherit', background: isActive ? '#FF6B00' : '#F0F2F8', color: isActive ? '#fff' : '#0F1729', border:'none', borderRadius:10, cursor:'pointer' }
-            }, a + ' \u20bd');
+            var cls = 'tu-preset' + (custom === '' && selected === a ? ' active' : '');
+            return React.createElement('button', { key:a, className:cls, onClick:function(){selectPreset(a);} }, a + ' \u20bd');
           })
         )
       ),
-      React.createElement('p', { style: { fontSize:12, fontWeight:700, color:'var(--text-sec, #6B7280)', margin:'0 0 6px' } }, 'Или введите сумму'),
+      React.createElement('p', { className:'tu-label' }, '\u0418\u043b\u0438 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u0441\u0443\u043c\u043c\u0443'),
       React.createElement('input', {
-        type: 'text', inputMode: 'numeric', value: custom, onChange: onCustomChange,
+        type:'text', inputMode:'numeric', value:custom, onChange:onCustomChange,
         placeholder: mn + ' \u2013 ' + mx + ' \u20bd',
-        style: { width:'100%', padding:'14px 14px', fontSize:18, fontWeight:700, fontFamily:'inherit', background:'var(--input-bg, #F0F2F8)', border: '2px solid ' + (custom !== '' && !ok ? '#F04438' : custom !== '' && ok ? '#00A651' : '#E5E7EB'), borderRadius:12, outline:'none', color:'var(--text, #0F1729)', marginBottom: 4, boxSizing:'border-box', textAlign:'center' }
+        className: 'tu-input' + (custom !== '' && !ok ? ' invalid' : custom !== '' && ok ? ' valid' : '')
       }),
-      custom !== '' && !ok && React.createElement('p', { style: { fontSize:11, color:'#F04438', margin:'0 0 8px', textAlign:'center' } }, activeSum < mn ? 'Минимум ' + mn + ' \u20bd' : 'Максимум ' + mx + ' \u20bd'),
-      custom !== '' && ok && React.createElement('p', { style: { fontSize:11, color:'#00A651', margin:'0 0 8px', textAlign:'center' } }, '\u2713 Сумма корректна'),
-      React.createElement('div', { style: { height: 8 } }),
-      err && React.createElement('p', { style: { fontSize:12, color:'#F04438', margin:'0 0 8px', fontWeight:600 } }, '\u26a0 ', err),
+      custom !== '' && !ok && React.createElement('p', { className:'tu-hint err' }, activeSum < mn ? '\u041c\u0438\u043d\u0438\u043c\u0443\u043c ' + mn + ' \u20bd' : '\u041c\u0430\u043a\u0441\u0438\u043c\u0443\u043c ' + mx + ' \u20bd'),
+      custom !== '' && ok && React.createElement('p', { className:'tu-hint ok' }, '\u2713 \u0421\u0443\u043c\u043c\u0430 \u043a\u043e\u0440\u0440\u0435\u043a\u0442\u043d\u0430'),
+      React.createElement('div', { style:{height:8} }),
+      err && React.createElement('p', { className:'tu-err' }, '\u26a0 ', err),
       React.createElement('button', {
-        onClick: handlePay, disabled: !ok || paying,
-        style: { width:'100%', padding:15, fontSize:15, fontWeight:700, fontFamily:'inherit', color:'#fff', background: ok ? 'linear-gradient(135deg,#FF6B00,#E85D00)' : '#ccc', border:'none', borderRadius:12, cursor: ok ? 'pointer' : 'default', opacity: paying ? 0.5 : 1 }
-      }, paying ? 'Создаём платёж...' : ok ? 'Оплатить ' + activeSum + ' \u20bd' : 'Выберите сумму'),
-      React.createElement('p', { style: { textAlign:'center', fontSize:10, color:'var(--text-hint, #9CA3AF)', marginTop:8 } }, '\u042eKassa \u00b7 карта, СБП, SberPay, T-Pay')
+        onClick:handlePay, disabled:!ok || paying,
+        className: 'tu-pay' + (paying ? ' loading' : '')
+      }, paying ? '\u0421\u043e\u0437\u0434\u0430\u0451\u043c \u043f\u043b\u0430\u0442\u0451\u0436...' : ok ? '\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u044c ' + activeSum + ' \u20bd' : '\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u0443\u043c\u043c\u0443'),
+      React.createElement('p', { className:'tu-footer' }, '\u042eKassa \u00b7 \u043a\u0430\u0440\u0442\u0430, \u0421\u0411\u041f, SberPay, T-Pay')
     )
   );
 }

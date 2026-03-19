@@ -218,3 +218,41 @@ html[data-theme="light"] {
     --red-bg: #FEE4E2;
     --yellow-bg: #FFF8EB;
 }
+
+/* ─── TopUp ─── */
+.tu-wrap { padding: 10px 14px 16px; }
+.tu-title { font-size:17px; font-weight:800; margin:0 0 4px; }
+.tu-sub { font-size:11px; color:#9CA3AF; margin:0 0 4px; }
+.tu-limit { font-size:11px; color:#9CA3AF; margin:0 0 14px; }
+.tu-label { font-size:12px; font-weight:700; color:#6B7280; margin:0 0 6px; }
+.tu-grid { display:grid; gap:6px; margin-bottom:14px; }
+.tu-grid2 { grid-template-columns: repeat(2,1fr); }
+.tu-grid3 { grid-template-columns: repeat(3,1fr); }
+.tu-grid4 { grid-template-columns: repeat(4,1fr); }
+.tu-preset { padding:12px 0; font-size:15px; font-weight:700; font-family:inherit; border:none; border-radius:10px; cursor:pointer; background:#F0F2F8; color:#0F1729; }
+.tu-preset.active { background:#FF6B00; color:#fff; }
+.tu-input { width:100%; padding:14px; font-size:18px; font-weight:700; font-family:inherit; background:#F0F2F8; border:2px solid #E5E7EB; border-radius:12px; outline:none; color:#0F1729; margin-bottom:4px; box-sizing:border-box; text-align:center; }
+.tu-input.valid { border-color:#00A651; }
+.tu-input.invalid { border-color:#F04438; }
+.tu-hint { font-size:11px; text-align:center; margin:0 0 8px; }
+.tu-hint.ok { color:#00A651; }
+.tu-hint.err { color:#F04438; }
+.tu-err { font-size:12px; color:#F04438; margin:0 0 8px; font-weight:600; }
+.tu-pay { width:100%; padding:15px; font-size:15px; font-weight:700; font-family:inherit; color:#fff; background:linear-gradient(135deg,#FF6B00,#E85D00); border:none; border-radius:12px; cursor:pointer; }
+.tu-pay:disabled { background:#ccc; cursor:default; }
+.tu-pay.loading { opacity:0.5; }
+.tu-footer { text-align:center; font-size:10px; color:#9CA3AF; margin-top:8px; }
+.tu-spinner { width:24px; height:24px; border:2px solid #E5E7EB; border-top-color:#1B6EF3; border-radius:50%; margin:0 auto; animation:spin 0.6s linear infinite; }
+.tu-blocked { font-size:14px; font-weight:600; color:#F04438; text-align:center; padding:20px 0; }
+
+@media (prefers-color-scheme: dark) {
+  .tu-sub, .tu-limit, .tu-label, .tu-footer { color:#6B7280; }
+  .tu-preset { background:#243049; color:#F0F2F8; }
+  .tu-preset.active { background:#FF6B00; color:#fff; }
+  .tu-input { background:#243049; border-color:#2D3A54; color:#F0F2F8; }
+  .tu-input.valid { border-color:#00A651; }
+  .tu-input.invalid { border-color:#F04438; }
+  .tu-pay:disabled { background:#2D3A54; }
+  .tu-spinner { border-color:#2D3A54; border-top-color:#1B6EF3; }
+  .tu-err { color:#F04438; }
+}
