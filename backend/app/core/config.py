@@ -1,5 +1,8 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+import logging
+
+_log = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -33,10 +36,12 @@ class Settings(BaseSettings):
     yukassa_shop_id: str = ""
     yukassa_secret_key: str = ""
     yukassa_return_url: str = ""
+    yukassa_receipt_email: str = "receipt@tkpay.ru"
+    yukassa_receipt_tax: str = "1"  # 1=без НДС, 2=0%, 3=10%, 4=20%
     # ─── MAX Bot ───
     max_bot_token: str = ""
     # ─── CORS ───
-    cors_origins: str = "*"
+    cors_origins: str = "https://app.tkpay.ru"
     # ─── Ticket ID маппинг ───
     ticket_purse: str = "0110"
     ticket_pack: str = "0111,0112,0191,0192,0194,1196,0195,1098,1096,1094,1113,1114,0297,1056"
@@ -54,4 +59,16 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    return Settings()
+    s = Settings()
+
+    # Проверки безопасности при старте
+    if s.secret_key == "change-me-in-production":
+        _log.warning("⚠ SECRET_KEY не изменён! Задайте случайную строку в .env")
+    if s.debug and s.yukassa_shop_id:
+        _log.warning("⚠ DEBUG=True при настроенной ЮKassa! Подпись MAX Bridge не проверяется")
+    if s.cors_origins == "*":
+        _log.warning("⚠ CORS_ORIGINS=* — любой сайт может обращаться к API")
+    if not s.admin_password:
+        _log.warning("⚠ ADMIN_PASSWORD пустой — админка недоступна")
+
+    return s

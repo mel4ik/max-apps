@@ -54,7 +54,7 @@ export default function CardList({ cards, loading, error, onRefresh, onSelect, o
           onClick: function() { onSelect(c); },
           style: { animationDelay: (idx * 60) + 'ms' }
         },
-          React.createElement('div', { style: { width:44, height:44, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0, background:'linear-gradient(135deg,'+cl+','+cl+'88)', boxShadow:'0 2px 8px '+cl+'33' } }, cfg.icon || '\uD83D\uDCB3'),
+          React.createElement('div', { style: { width:44, height:44, borderRadius:13, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:700, color:'#fff', flexShrink:0, background:'linear-gradient(135deg,'+cl+','+cl+'BB)', boxShadow:'0 2px 8px '+cl+'33' } }, cfg.icon || 'К'),
           React.createElement('div', { style: { flex:1, minWidth:0 } },
             React.createElement('p', { className: 'cl-card-label' }, p.label || c.ticket_description || 'ЕТК'),
             React.createElement('p', { className: 'cl-card-region' }, c.region || '')

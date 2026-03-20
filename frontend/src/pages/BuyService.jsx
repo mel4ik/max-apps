@@ -9,6 +9,8 @@ export default function BuyService({ card: c, onBack, onPay }) {
   var _selected = useState(null); var selected = _selected[0]; var setSelected = _selected[1];
   var _paying = useState(false); var paying = _paying[0]; var setPaying = _paying[1];
   var _err = useState(''); var err = _err[0]; var setErr = _err[1];
+  var _email = useState(''); var email = _email[0]; var setEmail = _email[1];
+  var _showEmail = useState(false); var showEmail = _showEmail[0]; var setShowEmail = _showEmail[1];
 
   useEffect(function() {
     setLoading(true);
@@ -44,7 +46,7 @@ export default function BuyService({ card: c, onBack, onPay }) {
     if (!sel || paying) return;
     setPaying(true);
     setErr('');
-    api.createPurchase(c.id, sel.serviceId, 0).then(function(res) {
+    api.createPurchase(c.id, sel.serviceId, 0, email || null).then(function(res) {
       window._ykToken = res.confirmation_token;
       onPay(Math.round(sel.cost / 100), res.invoice_id);
     }).catch(function(e) {
@@ -79,6 +81,15 @@ export default function BuyService({ card: c, onBack, onPay }) {
         );
       }),
       err && React.createElement('p', { className: 'bs-error' }, '\u26a0 ', err),
+      !showEmail && React.createElement('p', {
+        className:'tu-email-link',
+        onClick: function() { setShowEmail(true); }
+      }, '\ud83d\udce7 \u0427\u0435\u043a \u043d\u0430 email'),
+      showEmail && React.createElement('input', {
+        type:'email', value:email, onChange:function(e){setEmail(e.target.value);},
+        placeholder:'\u0412\u0430\u0448 email \u0434\u043b\u044f \u0447\u0435\u043a\u0430 (\u043d\u0435\u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u044c\u043d\u043e)',
+        className:'tu-email-input'
+      }),
       sel && React.createElement('button', { onClick: handlePay, disabled: paying, className: 'bs-pay-btn' },
         paying ? 'Создаём платёж...' : 'Оплатить ' + fk(sel.cost) + ' \u20bd'
       )

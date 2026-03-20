@@ -188,12 +188,19 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
       dp.blocked && React.createElement('div', { className: 'cd-no-pay cd-blocked' }, '\u26d4 \u041a\u0430\u0440\u0442\u0430 \u0437\u0430\u0431\u043b\u043e\u043a\u0438\u0440\u043e\u0432\u0430\u043d\u0430'),
       !dp.blocked && payType === 'service' && svcAllowed === false && React.createElement('div', { className: 'cd-no-pay' }, svcDenyReason || '\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0443\u0441\u043b\u0443\u0433'),
       !canPay && !dp.blocked && payType !== 'service' && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
-      React.createElement('button', { onClick: doRefresh, className: 'cd-icon-btn' }, refreshing ? '\u23f3' : '\u21bb'),
+      React.createElement('button', { onClick: doRefresh, className: 'cd-icon-btn', dangerouslySetInnerHTML: { __html: refreshing
+        ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-dasharray="16" stroke-dashoffset="0"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/></circle></svg>'
+        : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>'
+      } }),
       React.createElement('button', {
         onClick: doDelete, disabled: delLoad,
         className: 'cd-icon-btn' + (delConfirm ? ' delete-confirm' : ' delete'),
-        style: { opacity: delLoad ? 0.5 : 1 }
-      }, delConfirm ? '\u274c' : '\ud83d\uddd1\ufe0f')
+        style: { opacity: delLoad ? 0.5 : 1 },
+        dangerouslySetInnerHTML: { __html: delConfirm
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+        }
+      })
     ),
 
     // ── Операции ──

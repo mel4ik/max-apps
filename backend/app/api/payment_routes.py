@@ -154,6 +154,7 @@ async def get_operations(
 class ReplenishRequest(BaseModel):
     amount: int  # копейки
     type: str = "VALUE"
+    email: Optional[str] = None  # email для чека (необязательно)
 
 
 @router.post("/cards/{card_id}/replenish")
@@ -187,6 +188,7 @@ async def create_replenishment(
                 "agent_tx_id": korona_invoice["agentTransactionId"],
                 "card_pan": card.card_pan,
             },
+            customer_email=body.email,
         )
     except YukassaError as e:
         # Отменяем счёт в Короне
@@ -229,6 +231,7 @@ async def create_replenishment(
 class PurchaseRequest(BaseModel):
     service_id: int
     used_counter_amount: int = 0
+    email: Optional[str] = None  # email для чека (необязательно)
 
 
 @router.post("/cards/{card_id}/purchase")
@@ -263,6 +266,7 @@ async def create_purchase(
                 "card_pan": card.card_pan,
                 "service_id": str(body.service_id),
             },
+            customer_email=body.email,
         )
     except YukassaError as e:
         try:
@@ -308,16 +312,16 @@ async def yukassa_webhook(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    ЮKassa webhook → подтверждение/отмена в Короне.
-    Использует SELECT FOR UPDATE — безопасно при параллельных запросах.
+    ЮKassa webhook → верификация через API → подтверждение/отмена в Короне.
+    Безопасность: не доверяем данным из webhook напрямую,
+    перепроверяем статус платежа через GET /v3/payments/{id}.
     """
     body = await request.json()
     event = body.get("event", "")
     payment = body.get("object", {})
     payment_id = payment.get("id")
-    status = payment.get("status")
 
-    log.info(f"YuKassa webhook: event={event}, payment_id={payment_id}, status={status}")
+    log.info(f"YuKassa webhook: event={event}, payment_id={payment_id}")
 
     if not payment_id:
         return {"ok": True}
@@ -334,6 +338,17 @@ async def yukassa_webhook(
     # Уже в терминальном состоянии — пропускаем
     if inv.status in ("PAID", "CANCELED", "FAILED"):
         log.info(f"Invoice {inv.id}: уже {inv.status}, пропуск webhook")
+        return {"ok": True}
+
+    # ВЕРИФИКАЦИЯ: перепроверяем статус через API ЮKassa
+    # Не доверяем данным из webhook — они могут быть подделаны
+    yk = get_yukassa()
+    try:
+        yk_data = await yk.get_payment(payment_id)
+        status = yk_data.get("status")
+        log.info(f"YuKassa verified: payment={payment_id}, status={status}")
+    except Exception as e:
+        log.error(f"YuKassa verify failed for {payment_id}: {e}")
         return {"ok": True}
 
     # Обновляем статус ЮKassa

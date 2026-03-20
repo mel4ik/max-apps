@@ -35,31 +35,31 @@ export function isPayAllowed(ticketId) {
 
 export var KIND_CONFIG = {
   purse: {
-    color:'#FF6B00', icon:'💰', label:'Электронный кошелёк',
+    color:'#FF6B00', icon:'К', label:'Электронный кошелёк',
     showBalance:true, showTrips:false, showDates:true, showTicketDesc:true,
     payType:'replenish',
     replMin:1, replMax:2800, replPresets:[200,500,1000,1500], replDynMax:true,
   },
   pack: {
-    color:'#FF6B00', icon:'📦', label:'Пакет пополнения',
+    color:'#FF6B00', icon:'П', label:'Пакет пополнения',
     showBalance:false, showTrips:true, showDates:false, showTicketDesc:true,
     payType:'service',
     replMin:0, replMax:0, replPresets:[], replDynMax:false,
   },
   counter: {
-    color:'#1B6EF3', icon:'🎫', label:'Счётчик поездок',
+    color:'#1B6EF3', icon:'С', label:'Счётчик поездок',
     showBalance:false, showTrips:true, showDates:true, showTicketDesc:true,
     payType:'none',
     replMin:0, replMax:0, replPresets:[], replDynMax:false,
   },
   abonement: {
-    color:'#7C3AED', icon:'📅', label:'Абонемент',
+    color:'#7C3AED', icon:'А', label:'Абонемент',
     showBalance:false, showTrips:false, showDates:true, showTicketDesc:true,
     payType:'service',
     replMin:0, replMax:0, replPresets:[], replDynMax:false,
   },
   social: {
-    color:'#00A651', icon:'🏥', label:'Социальная карта',
+    color:'#00A651', icon:'Л', label:'Социальная карта',
     showBalance:true, showTrips:true, showDates:true, showTicketDesc:true,
     payType:'replenish',
     replMin:1, replMax:2800, replPresets:[200,500,1000,1500], replDynMax:true,

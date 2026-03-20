@@ -196,6 +196,8 @@ input:focus { box-shadow: 0 0 0 3px rgba(27,110,243,0.15); }
 .tu-footer { text-align:center; font-size:10px; color:var(--text-hint); margin-top:8px; }
 .tu-spinner { width:24px; height:24px; border:2px solid var(--border); border-top-color:#1B6EF3; border-radius:50%; margin:0 auto; animation:spin 0.6s linear infinite; }
 .tu-blocked { font-size:14px; font-weight:600; color:#F04438; text-align:center; padding:20px 0; }
+.tu-email-link { font-size:12px; color:var(--blue); text-align:center; margin:0 0 8px; cursor:pointer; }
+.tu-email-input { width:100%; padding:10px; font-size:13px; font-family:inherit; background:var(--input-bg); border:1.5px solid var(--border); border-radius:10px; outline:none; color:var(--text); box-sizing:border-box; text-align:center; margin-bottom:8px; }
 
 /* ═══════════════════════════════════════════
    CardList
@@ -231,9 +233,16 @@ input:focus { box-shadow: 0 0 0 3px rgba(27,110,243,0.15); }
 .cd-pay-btn { flex:1; display:flex; align-items:center; justify-content:center; gap:5px; padding:13px; font-size:13px; font-weight:700; font-family:inherit; color:#fff; background:#FF6B00; border:none; border-radius:12px; cursor:pointer; }
 .cd-no-pay { flex:1; display:flex; align-items:center; justify-content:center; padding:13px; font-size:12px; font-weight:600; color:var(--text-hint); background:var(--card); border-radius:12px; }
 .cd-no-pay.cd-blocked { color:#F04438; background:var(--red-bg); }
-.cd-icon-btn { width:44px; display:flex; align-items:center; justify-content:center; padding:12px; font-size:16px; font-family:inherit; color:var(--text); background:var(--card); border:1.5px solid var(--border); border-radius:12px; cursor:pointer; }
-.cd-icon-btn.delete { color:var(--text-hint); }
-.cd-icon-btn.delete-confirm { color:#F04438; background:#3D1515; border-color:#FECACA; }
+.cd-icon-btn {
+  width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+  padding:0; font-family:inherit;
+  color:#fff; background:linear-gradient(135deg,#1B6EF3,#1B6EF3BB);
+  border:none; border-radius:12px; cursor:pointer;
+  transition:opacity 0.15s;
+}
+.cd-icon-btn:active { opacity:0.7; }
+.cd-icon-btn.delete { background:linear-gradient(135deg,#F04438,#F04438BB); }
+.cd-icon-btn.delete-confirm { background:linear-gradient(135deg,#F04438,#D42020); }
 .cd-ops-title { font-size:14px; font-weight:700; margin:0; color:var(--text); }
 .cd-ops-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
 .cd-ops-spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:#1B6EF3; border-radius:50%; margin:0 auto; animation:spin 0.6s linear infinite; }

@@ -12,6 +12,8 @@ export default function TopUp({ card: c, onBack, onPay }) {
   var _err = useState(''); var err = _err[0]; var setErr = _err[1];
   var _selected = useState(null); var selected = _selected[0]; var setSelected = _selected[1];
   var _custom = useState(''); var custom = _custom[0]; var setCustom = _custom[1];
+  var _email = useState(''); var email = _email[0]; var setEmail = _email[1];
+  var _showEmail = useState(false); var showEmail = _showEmail[0]; var setShowEmail = _showEmail[1];
 
   useEffect(function() {
     setLoading(true);
@@ -57,7 +59,7 @@ export default function TopUp({ card: c, onBack, onPay }) {
   function handlePay() {
     if (!ok || paying) return;
     setPaying(true); setErr('');
-    api.createReplenishment(c.id, activeSum * 100, 'VALUE').then(function(res) {
+    api.createReplenishment(c.id, activeSum * 100, 'VALUE', email || null).then(function(res) {
       window._ykToken = res.confirmation_token;
       onPay(activeSum, res.invoice_id);
     }).catch(function(e) { setErr(e.message); setPaying(false); });
@@ -90,6 +92,15 @@ export default function TopUp({ card: c, onBack, onPay }) {
       custom !== '' && ok && React.createElement('p', { className:'tu-hint ok' }, '\u2713 \u0421\u0443\u043c\u043c\u0430 \u043a\u043e\u0440\u0440\u0435\u043a\u0442\u043d\u0430'),
       React.createElement('div', { style:{height:8} }),
       err && React.createElement('p', { className:'tu-err' }, '\u26a0 ', err),
+      !showEmail && React.createElement('p', {
+        className:'tu-email-link',
+        onClick: function() { setShowEmail(true); }
+      }, '\ud83d\udce7 \u0427\u0435\u043a \u043d\u0430 email'),
+      showEmail && React.createElement('input', {
+        type:'email', value:email, onChange:function(e){setEmail(e.target.value);},
+        placeholder:'\u0412\u0430\u0448 email \u0434\u043b\u044f \u0447\u0435\u043a\u0430 (\u043d\u0435\u043e\u0431\u044f\u0437\u0430\u0442\u0435\u043b\u044c\u043d\u043e)',
+        className:'tu-email-input'
+      }),
       React.createElement('button', {
         onClick:handlePay, disabled:!ok || paying,
         className: 'tu-pay' + (paying ? ' loading' : '')

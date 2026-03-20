@@ -26,17 +26,20 @@ class YukassaClient:
         self.shop_id = s.yukassa_shop_id
         self.secret_key = s.yukassa_secret_key
         self.return_url = s.yukassa_return_url
+        self.receipt_email = s.yukassa_receipt_email
+        self.receipt_tax = s.yukassa_receipt_tax
 
     def _auth(self):
         return (self.shop_id, self.secret_key)
 
-    async def create_payment(self, amount_kopecks: int, description: str, metadata: dict = None) -> dict:
+    async def create_payment(self, amount_kopecks: int, description: str, metadata: dict = None, customer_email: str = None) -> dict:
         """
-        Создаёт платёж в ЮKassa.
-        Возвращает: { payment_id, confirmation_url, status }
+        Создаёт платёж в ЮKassa с чеком 54-ФЗ.
+        customer_email — email покупателя для чека (если не указан — дефолт из .env)
         """
         amount_rub = f"{amount_kopecks / 100:.2f}"
         idempotency_key = str(uuid.uuid4())
+        email = customer_email.strip() if customer_email and customer_email.strip() else self.receipt_email
 
         body = {
             "amount": {
@@ -45,10 +48,27 @@ class YukassaClient:
             },
             "confirmation": {
                 "type": "embedded",
-                
             },
             "capture": True,
             "description": description[:128],
+            "receipt": {
+                "customer": {
+                    "email": email,
+                },
+                "items": [
+                    {
+                        "description": description[:128],
+                        "quantity": "1.00",
+                        "amount": {
+                            "value": amount_rub,
+                            "currency": "RUB",
+                        },
+                        "vat_code": int(self.receipt_tax),
+                        "payment_subject": "service",
+                        "payment_mode": "full_payment",
+                    }
+                ],
+            },
         }
         if metadata:
             body["metadata"] = metadata

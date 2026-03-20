@@ -123,17 +123,21 @@ export function getOperations(cardId) {
   return req('/pay/cards/' + cardId + '/operations');
 }
 
-export function createReplenishment(cardId, amount, type) {
+export function createReplenishment(cardId, amount, type, email) {
+  var body = { amount: amount, type: type || 'VALUE' };
+  if (email) body.email = email;
   return req('/pay/cards/' + cardId + '/replenish', {
     method: 'POST',
-    body: JSON.stringify({ amount: amount, type: type || 'VALUE' }),
+    body: JSON.stringify(body),
   });
 }
 
-export function createPurchase(cardId, serviceId, usedCounter) {
+export function createPurchase(cardId, serviceId, usedCounter, email) {
+  var body = { service_id: serviceId, used_counter_amount: usedCounter || 0 };
+  if (email) body.email = email;
   return req('/pay/cards/' + cardId + '/purchase', {
     method: 'POST',
-    body: JSON.stringify({ service_id: serviceId, used_counter_amount: usedCounter || 0 }),
+    body: JSON.stringify(body),
   });
 }
 
