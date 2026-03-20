@@ -1,25 +1,27 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div class="page page-center">
-    <div class="container-tight py-4">
-        <div class="card card-md">
-            <div class="card-body">
-                <h2 class="card-title text-center mb-4">Вход в панель управления</h2>
-                <form action="{{ request.url_for('admin:login') }}" method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Логин</label>
-                        <input type="text" name="username" class="form-control" placeholder="Введите логин" autofocus>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Пароль</label>
-                        <input type="password" name="password" class="form-control" placeholder="Введите пароль">
-                    </div>
-                    <div class="form-footer">
-                        <button type="submit" class="btn btn-primary w-100">Войти</button>
-                    </div>
-                </form>
-            </div>
+<style>
+.login-box { max-width: 400px; margin: 80px auto; padding: 0 16px; }
+.login-box .card { border-radius: 12px; }
+</style>
+<div class="login-box">
+    <div class="card card-md">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4">Часпик Админ</h2>
+            <form action="{{ request.url_for('admin:login') }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Логин</label>
+                    <input type="text" name="username" class="form-control" placeholder="Введите логин" autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Пароль</label>
+                    <input type="password" name="password" class="form-control" placeholder="Введите пароль">
+                </div>
+                <div class="form-footer">
+                    <button type="submit" class="btn btn-primary w-100">Войти</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

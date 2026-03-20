@@ -84,10 +84,10 @@ class CardAdmin(ModelView, model=Card):
 
     column_list = [
         Card.user_id, Card.card_pan, Card.region,
-        Card.ticket_description, Card.is_active,
+        Card.card_type, Card.ticket_description, Card.is_active,
         Card.is_replenishable, Card.is_social_card, Card.created_at,
     ]
-    column_searchable_list = [Card.card_pan, Card.region, Card.ticket_description]
+    column_searchable_list = [Card.card_pan, Card.region, Card.ticket_description, Card.card_type]
     column_sortable_list = [Card.created_at, Card.user_id, Card.is_active]
     column_default_sort = ("created_at", True)
 
@@ -96,6 +96,7 @@ class CardAdmin(ModelView, model=Card):
         Card.user_id: "Пользователь",
         Card.card_pan: "Номер карты",
         Card.region: "Регион",
+        Card.card_type: "Код типа",
         Card.ticket_description: "Тип карты",
         Card.is_active: "Активна",
         Card.is_replenishable: "Пополняемая",

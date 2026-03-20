@@ -102,8 +102,21 @@ async def add_card(
     if existing_card:
         if existing_card.is_active:
             raise HTTPException(400, "Эта карта уже добавлена")
-        # Реактивация удалённой карты
+        # Реактивация удалённой карты — обновляем данные из Короны
         existing_card.is_active = True
+        korona = KoronaInformator(db, redis)
+        try:
+            data = await korona.get_card_info(req.card_pan, force=True)
+            ci = data.get("card_info") or {}
+            tr = data.get("ticket_rule") or {}
+            existing_card.region = ci.get("region") or existing_card.region
+            existing_card.card_type = ci.get("card_type") or existing_card.card_type
+            existing_card.is_social_card = ci.get("is_social_card", False)
+            existing_card.is_replenishable = ci.get("is_replenishable", False)
+            existing_card.is_money_replenishable = ci.get("is_money_replenishable", False)
+            existing_card.ticket_description = tr.get("ticket_description") or tr.get("short_description") or tr.get("description") or existing_card.ticket_description
+        except Exception:
+            pass
         await db.commit()
         await db.refresh(existing_card)
         log.info("Card reactivated: %s for user %s", req.card_pan[:8] + "...", user.id)
@@ -126,6 +139,7 @@ async def add_card(
     # Парсим ответ
     ci = data.get("card_info") or {}
     tr = data.get("ticket_rule") or {}
+    ticket_desc = tr.get("ticket_description") or tr.get("short_description") or tr.get("description") or ""
 
     card = Card(
         user_id=user.id,
@@ -139,7 +153,7 @@ async def add_card(
         is_replenishable=ci.get("is_replenishable", False),
         is_money_replenishable=ci.get("is_money_replenishable", False),
         is_roaming_allowed=ci.get("is_roaming_allowed", False),
-        ticket_description=tr.get("description"),
+        ticket_description=ticket_desc,
     )
     db.add(card)
     await db.commit()
