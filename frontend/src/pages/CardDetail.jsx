@@ -26,6 +26,10 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
   var _refreshing = useState(false); var refreshing = _refreshing[0]; var setRefreshing = _refreshing[1];
   var _p2 = useState(p); var liveP = _p2[0]; var setLiveP = _p2[1];
 
+  // Для service-карт: проверяем доступность услуг через Replenisher
+  var _svcAllowed = useState(null); var svcAllowed = _svcAllowed[0]; var setSvcAllowed = _svcAllowed[1];
+  var _svcDenyReason = useState(''); var svcDenyReason = _svcDenyReason[0]; var setSvcDenyReason = _svcDenyReason[1];
+
   // Все данные загружаем разом, показываем порциями
   var _trips = useState([]); var allTrips = _trips[0]; var setAllTrips = _trips[1];
   var _repls = useState([]); var allRepls = _repls[0]; var setAllRepls = _repls[1];
@@ -36,6 +40,29 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
   var _tab = useState('trips'); var tab = _tab[0]; var setTab = _tab[1];
 
   useEffect(function() { setLiveP(p); }, [c.id]);
+
+  // Для service-карт: проверяем доступность покупки услуг
+  useEffect(function() {
+    if (payType !== 'service' || !canPay) {
+      setSvcAllowed(null);
+      setSvcDenyReason('');
+      return;
+    }
+    setSvcAllowed(null); // loading
+    api.getOperations(c.id).then(function(ops) {
+      var sp = ops.servicePurchase || ops.service_purchase || {};
+      if (sp.allowed === false) {
+        setSvcAllowed(false);
+        var reason = sp.denyReason || sp.deny_reason || {};
+        setSvcDenyReason(reason.description || 'Покупка услуг недоступна');
+      } else {
+        setSvcAllowed(true);
+        setSvcDenyReason('');
+      }
+    }).catch(function() {
+      setSvcAllowed(true); // при ошибке — не блокируем, пусть BuyService покажет ошибку
+    });
+  }, [c.id, payType, canPay]);
 
   // Загружаем операции с retry
   useEffect(function() {
@@ -118,6 +145,10 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
 
   var dp = liveP;
 
+  // Для кнопки пополнения
+  var payDisabled = dp.blocked || (payType === 'service' && svcAllowed === false);
+  var payLoading = payType === 'service' && svcAllowed === null && canPay;
+
   return React.createElement('div', { className: 'cd-wrap' },
     // ── Карточка-визитка ──
     React.createElement('div', { style: { position:'relative', borderRadius:18, padding:'20px 16px', marginBottom:10, overflow:'hidden', boxShadow:'0 8px 28px '+cl+'44', background:'linear-gradient(135deg,'+cl+','+cl+'CC,'+cl+'77)' } },
@@ -152,9 +183,10 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
 
     // ── Кнопки действий ──
     React.createElement('div', { className: 'cd-actions' },
-      canPay && payType !== 'none' && !dp.blocked && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, payType === 'service' ? '\u2191 \u041a\u0443\u043f\u0438\u0442\u044c \u0443\u0441\u043b\u0443\u0433\u0443' : '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
-      !canPay && !dp.blocked && payType === 'service' && !dp.hasSvcs && React.createElement('div', { className: 'cd-no-pay' }, '\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0443\u0441\u043b\u0443\u0433'),
+      canPay && payType !== 'none' && !payDisabled && !payLoading && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, payType === 'service' ? '\u2191 \u041a\u0443\u043f\u0438\u0442\u044c \u0443\u0441\u043b\u0443\u0433\u0443' : '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
+      payLoading && React.createElement('div', { className: 'cd-no-pay' }, '\u23f3'),
       dp.blocked && React.createElement('div', { className: 'cd-no-pay cd-blocked' }, '\u26d4 \u041a\u0430\u0440\u0442\u0430 \u0437\u0430\u0431\u043b\u043e\u043a\u0438\u0440\u043e\u0432\u0430\u043d\u0430'),
+      !dp.blocked && payType === 'service' && svcAllowed === false && React.createElement('div', { className: 'cd-no-pay' }, svcDenyReason || '\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0443\u0441\u043b\u0443\u0433'),
       !canPay && !dp.blocked && payType !== 'service' && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
       React.createElement('button', { onClick: doRefresh, className: 'cd-icon-btn' }, refreshing ? '\u23f3' : '\u21bb'),
       React.createElement('button', {

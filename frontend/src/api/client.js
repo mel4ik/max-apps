@@ -82,22 +82,16 @@ export function parseCardStatus(status, cardFlags) {
     abDesc = abonements[0].description || '';
   }
 
-  // Услуги для покупки
+  // Услуги для покупки (из Informator — активные на карте)
   var svcs = [].concat(es.abonement||[], es.counter||[], es.money_counter||[], es.day_counter||[]);
-  var hasSvcs = svcs.length > 0;
   var dynReplMax = calcReplMax(cfg, bal);
 
   // Блокировка: только stop_list_status === 'BLOCKED' запрещает пополнение
   // WAIT_REPLENISHMENT — карта ждёт пополнения, это нормально
   var stopStatus = ci.stop_list_status || '';
   var isBlocked = stopStatus === 'BLOCKED';
-  // На карточке показываем стоп-лист только при BLOCKED (не WAIT_REPLENISHMENT)
   var showStopBadge = isBlocked;
   var canPay = isPayAllowed(tr.ticket_id) && !isBlocked;
-  // Для pack/abonement (payType=service) — если нет услуг, кнопка неактивна
-  if (canPay && cfg.payType === 'service' && !hasSvcs) {
-    canPay = false;
-  }
 
   return {
     kind: kind, cfg: cfg,
@@ -112,7 +106,6 @@ export function parseCardStatus(status, cardFlags) {
     abStart: abStart,
     abEnd: abEnd,
     abDesc: abDesc,
-    hasSvcs: hasSvcs,
     ticketType: ta.ticket_type,
     label: tr.ticket_description || tr.short_description || cfg.label,
     ticketId: tr.ticket_id || null,
