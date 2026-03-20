@@ -251,11 +251,13 @@ CACHE_TTL_TRIPS=0
 CACHE_TTL_REPLS=0
 ```
 
-### Админка
+### Админка и безопасность
 ```env
 ADMIN_LOGIN=admin
 ADMIN_PASSWORD=***
-SECRET_KEY=change-me-to-random-string-in-production
+SECRET_KEY=<случайная строка 32+ символов>  # python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+CORS_ORIGINS=https://app.tkpay.ru           # НЕ ставить * на проде
+DEBUG=false                                  # true пропускает проверку подписи MAX
 ```
 
 ### MAX Bot
@@ -289,6 +291,32 @@ MAX_BOT_TOKEN=***  # Для будущих push-уведомлений
 | trips | Кэш поездок (fallback) |
 | replenishments | Кэш пополнений (fallback) |
 | invoices | Заказы: yukassa + korona статусы + ошибки |
+
+---
+
+## Безопасность
+
+### Webhook ЮKassa
+Webhook не доверяет данным из POST body. При получении уведомления бэкенд перепроверяет статус платежа через `GET /v3/payments/{id}` к API ЮKassa с credentials магазина. Фейковый webhook с `succeeded` не пройдёт — API вернёт реальный статус.
+
+### CORS
+По умолчанию `CORS_ORIGINS=https://app.tkpay.ru`. Менять на `*` запрещено на проде.
+
+### Авторизация MAX Bridge
+Все пользовательские эндпоинты (`/api/*`) требуют заголовок `X-Max-Init-Data` с HMAC-SHA256 подписью от MAX SDK. При `DEBUG=true` проверка подписи пропускается — **на проде обязательно `false`**.
+
+### Подтверждение в Короне
+Используется `SELECT ... FOR UPDATE` при подтверждении платежа — предотвращает race condition между webhook и polling. Второй запрос видит что `korona_status` уже `PAID` и пропускает.
+
+### Блокировка карт
+Карты в стоп-листе Короны (`is_in_stoplist=true`) автоматически блокируются для пополнения. Пользователь видит красную плашку «⛔ Карта заблокирована».
+
+### Валидация при старте
+Бэкенд при старте проверяет и пишет ⚠️ в логи если:
+- `SECRET_KEY` не изменён с дефолтного
+- `DEBUG=true` при настроенной ЮKassa
+- `CORS_ORIGINS=*`
+- `ADMIN_PASSWORD` пустой
 
 ---
 
@@ -326,12 +354,13 @@ docker compose exec backend python3 -c "from app.core.config import get_settings
 - [x] Добавление / удаление карт
 - [x] Типы карт из .env (purse/pack/abonement/social)
 - [x] CAN_PAY — контроль пополнения
+- [x] Блокировка карт в стоп-листе (is_in_stoplist → canPay=false)
 - [x] Абонемент из extra_services или "Нет активных услуг"
 - [x] Перевод операций на русский
 - [x] Пополнение через Корона Replenisher API (mTLS)
 - [x] Покупка услуг через Replenisher API
 - [x] Оплата ЮKassa embedded widget (карта, СБП, SberPay, T-Pay)
-- [x] Webhook ЮKassa → автоподтверждение в Короне
+- [x] Webhook ЮKassa с верификацией через API (защита от фейковых)
 - [x] SELECT FOR UPDATE — защита от race condition (webhook vs polling)
 - [x] Polling статуса + мгновенное скрытие виджета ЮKassa при PAID
 - [x] Кэш отключён (TTL=0) — всегда свежие данные
@@ -344,12 +373,17 @@ docker compose exec backend python3 -c "from app.core.config import get_settings
 - [x] Поездки: маршрут, транспорт, перевозчик, эмодзи
 - [x] Пополнения: название агента
 - [x] SQLAdmin — Пользователи, Карты, Платежи (русская локализация)
-- [x] Receipt 54-ФЗ (флаг YUKASSA_RECEIPT_ENABLED)
+- [x] CORS ограничение (не *)
+- [x] Валидация конфигурации при старте (предупреждения в логах)
+- [x] Receipt 54-ФЗ (на стороне ЮKassa)
 - [x] MAX Bot token интеграция (заготовка для push)
 - [x] Docker Compose + SSL + app.tkpay.ru
 
 ## 🔜 В планах
 
 - [ ] Push-уведомления через MAX Bot
+- [ ] Автоотмена зависших PENDING инвойсов (cron/scheduler)
+- [ ] Rate limiting на создание платежей
 - [ ] Автоплатёж
 - [ ] Статистика платежей в админке (графики)
+- [ ] Sentry / мониторинг ошибок

@@ -216,8 +216,9 @@ class KoronaInformator:
                 )
 
                 if resp.status_code == 401:
-                    # Токен протух — обновляем и пробуем снова
-                    token = await self.keycloak.get_token()
+                    # Токен протух — принудительно обновляем
+                    log.warning("Korona 401, forcing token refresh (attempt %d)", attempt + 1)
+                    token = await self.keycloak.get_token(force=True)
                     continue
 
                 if resp.status_code == 404:

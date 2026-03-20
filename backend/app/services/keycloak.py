@@ -22,9 +22,14 @@ class KeycloakAuth:
         self._refresh_expires_at = 0
         self._http = httpx.AsyncClient(timeout=15)
 
-    async def get_token(self) -> str:
+    async def get_token(self, force: bool = False) -> str:
         """Возвращает актуальный Bearer token. Обновляет при необходимости."""
         now = time.time()
+
+        # Принудительное обновление
+        if force:
+            self._access_token = None
+            self._refresh_token = None
 
         # Токен ещё валиден (с запасом 30 сек)
         if self._access_token and now < self._expires_at - 30:

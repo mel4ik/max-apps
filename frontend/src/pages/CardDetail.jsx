@@ -30,25 +30,41 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
 
   useEffect(function() { setLiveP(p); }, [c.id]);
 
-  // Загружаем все операции за раз
+  // Загружаем операции с retry
   useEffect(function() {
     setOpsLoading(true);
     setAllTrips([]); setAllRepls([]);
     setTripsShow(SHOW_STEP); setReplsShow(SHOW_STEP);
 
-    Promise.all([
-      api.getTrips(c.id).catch(function(e) { console.error('trips err:', e); return { data:[] }; }),
-      api.getReplenishments(c.id).catch(function(e) { console.error('repls err:', e); return { data:[] }; }),
-    ]).then(function(res) {
-      console.log('trips keys:', Object.keys(res[0]));
-      console.log('repls keys:', Object.keys(res[1]));
-      var td = res[0].data || res[0].content || [];
-      var rd = res[1].data || res[1].content || [];
-      if (!Array.isArray(td)) td = [];
-      if (!Array.isArray(rd)) rd = [];
-      setAllTrips(td);
-      setAllRepls(rd);
-    }).finally(function() { setOpsLoading(false); });
+    var retried = false;
+
+    function loadOps() {
+      Promise.all([
+        api.getTrips(c.id).catch(function(e) { console.error('trips err:', e); return { _err: true }; }),
+        api.getReplenishments(c.id).catch(function(e) { console.error('repls err:', e); return { _err: true }; }),
+      ]).then(function(res) {
+        var tripsErr = res[0]._err;
+        var replsErr = res[1]._err;
+
+        // Если обе ошибки и ещё не ретраили — повторяем через 2с
+        // (первый запрос мог протухнуть, keycloak re-auth уже прошёл)
+        if (tripsErr && replsErr && !retried) {
+          retried = true;
+          setTimeout(loadOps, 2000);
+          return;
+        }
+
+        var td = !tripsErr ? (res[0].data || res[0].content || []) : [];
+        var rd = !replsErr ? (res[1].data || res[1].content || []) : [];
+        if (!Array.isArray(td)) td = [];
+        if (!Array.isArray(rd)) rd = [];
+        setAllTrips(td);
+        setAllRepls(rd);
+        setOpsLoading(false);
+      });
+    }
+
+    loadOps();
   }, [c.id]);
 
   // Видимые порции
