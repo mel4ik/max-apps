@@ -12,7 +12,14 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
   var pan = c.card_pan || '';
   var canPay = p.canPay !== false;
   var payType = cfg.payType || 'none';
-  var daysLeft = p.abEnd ? Math.max(0, Math.ceil((new Date(p.abEnd) - new Date()) / 86400000)) : 0;
+  // Остаток дней: от max(дата начала, сегодня) до даты окончания
+  var now = new Date();
+  var daysLeft = 0;
+  if (p.abEnd) {
+    var startDate = p.abStart ? new Date(p.abStart) : now;
+    var fromDate = startDate > now ? startDate : now;
+    daysLeft = Math.max(0, Math.ceil((new Date(p.abEnd) - fromDate) / 86400000));
+  }
 
   var _del = useState(false); var delConfirm = _del[0]; var setDelConfirm = _del[1];
   var _delLoad = useState(false); var delLoad = _delLoad[0]; var setDelLoad = _delLoad[1];
@@ -128,7 +135,7 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
       cfg.showTrips && dp.trips > 0 && React.createElement('div', { style: { position:'relative', marginBottom:4 } },
         React.createElement('p', { style: { fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:1, margin:'0 0 3px' } }, '\u041e\u0441\u0442\u0430\u0442\u043e\u043a \u043f\u043e\u0435\u0437\u0434\u043e\u043a'),
         React.createElement('p', { style: { fontSize: cfg.showBalance ? 25 : 32, fontWeight:800, color:'#fff', margin:0 } }, dp.trips),
-        dp.tripsEnd && React.createElement('p', { style: { fontSize:11, color:'rgba(255,255,255,0.55)', margin:'6px 0 0' } }, '\u0414\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u0434\u043e ', sd(dp.tripsEnd))
+        dp.tripsEnd && dp.kind !== 'pack' && React.createElement('p', { style: { fontSize:11, color:'rgba(255,255,255,0.55)', margin:'6px 0 0' } }, '\u0414\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 \u0434\u043e ', sd(dp.tripsEnd))
       ),
       cfg.showDates && dp.kind === 'abonement' && (
         dp.hasActiveAbonement
@@ -145,9 +152,10 @@ export default function CardDetail({ card: c, onBack, onTopUp, onBuyService, bri
 
     // ── Кнопки действий ──
     React.createElement('div', { className: 'cd-actions' },
-      canPay && payType !== 'none' && !dp.blocked && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
+      canPay && payType !== 'none' && !dp.blocked && React.createElement('button', { onClick: doPay, className: 'cd-pay-btn' }, payType === 'service' ? '\u2191 \u041a\u0443\u043f\u0438\u0442\u044c \u0443\u0441\u043b\u0443\u0433\u0443' : '\u2191 \u041f\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u044c'),
+      !canPay && !dp.blocked && payType === 'service' && !dp.hasSvcs && React.createElement('div', { className: 'cd-no-pay' }, '\u041d\u0435\u0442 \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b\u0445 \u0443\u0441\u043b\u0443\u0433'),
       dp.blocked && React.createElement('div', { className: 'cd-no-pay cd-blocked' }, '\u26d4 \u041a\u0430\u0440\u0442\u0430 \u0437\u0430\u0431\u043b\u043e\u043a\u0438\u0440\u043e\u0432\u0430\u043d\u0430'),
-      !canPay && !dp.blocked && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
+      !canPay && !dp.blocked && payType !== 'service' && React.createElement('div', { className: 'cd-no-pay' }, '\ud83d\udeab \u041f\u043e\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u0435 \u0437\u0430\u043f\u0440\u0435\u0449\u0435\u043d\u043e'),
       React.createElement('button', { onClick: doRefresh, className: 'cd-icon-btn' }, refreshing ? '\u23f3' : '\u21bb'),
       React.createElement('button', {
         onClick: doDelete, disabled: delLoad,
