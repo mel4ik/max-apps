@@ -86,11 +86,19 @@ export function parseCardStatus(status, cardFlags) {
   var svcs = [].concat(es.abonement||[], es.counter||[], es.money_counter||[], es.day_counter||[]);
   var dynReplMax = calcReplMax(cfg, bal);
 
+  // Блокировка: только stop_list_status === 'BLOCKED' запрещает пополнение
+  // WAIT_REPLENISHMENT — карта ждёт пополнения, это нормально
+  var stopStatus = ci.stop_list_status || '';
+  var isBlocked = stopStatus === 'BLOCKED';
+  var isInStoplist = ci.is_in_stoplist || false;
+  var canPay = isPayAllowed(tr.ticket_id) && !isBlocked;
+
   return {
     kind: kind, cfg: cfg,
-    stop: ci.is_in_stoplist || false,
-    stopStatus: ci.stop_list_status,
-    blocked: ci.stop_list_status === 'WAIT_PERK' ? 'BLOCKED' : ci.stop_list_status,
+    stop: isInStoplist,
+    stopStatus: stopStatus,
+    blocked: isBlocked,
+    blockedReason: isBlocked ? 'BLOCKED' : null,
     bal: bal, currency: cm.counter_money_currency,
     trips: tripsVal || 0, tripsMax: tripsMax,
     tripsEnd: tripsEnd || null,
@@ -102,7 +110,7 @@ export function parseCardStatus(status, cardFlags) {
     label: tr.ticket_description || tr.short_description || cfg.label,
     ticketId: tr.ticket_id || null,
     svcs: svcs, dynReplMax: dynReplMax,
-    canPay: isPayAllowed(tr.ticket_id),
+    canPay: canPay,
     stale: status._stale || false, source: status._source || 'unknown',
     cardImgUri: ci.card_img_uri || null,
     dateEnd: ci.card_expiration_date || null,

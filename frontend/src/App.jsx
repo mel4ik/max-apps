@@ -68,13 +68,21 @@ export default function App() {
     } catch(e) {}
   }
 
+  function refreshCard() {
+    if (!card) return;
+    api.getCardInfo(card.id, true).then(function(info) {
+      var parsed = api.parseCardStatus(info, card);
+      setCard(function(prev) { return Object.assign({}, prev, { status:info, parsed:parsed||prev.parsed }); });
+    }).catch(function() {});
+  }
+
   return React.createElement('div', { className: 'app-root' },
     React.createElement('div', { className: 'app-scroll' },
       scr==='cards' && React.createElement(CardList, { cards:cards, loading:loading, error:error, onRefresh:fetchCards, onSelect:handleSelect, onAdd:function(){setScr('add');} }),
       scr==='add' && React.createElement(AddCard, { onBack:function(){setScr('cards');}, onAdded:handleAdded, bridge:bridge }),
       scr==='det' && card && React.createElement(CardDetail, { card:card, onBack:function(){setScr('cards');fetchCards();}, onTopUp:function(){setScr('top');}, onBuyService:function(){setScr('buy');}, bridge:bridge }),
-      scr==='top' && card && React.createElement(TopUp, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
-      scr==='buy' && card && React.createElement(BuyService, { card:card, onBack:function(){setScr('det');}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
+      scr==='top' && card && React.createElement(TopUp, { card:card, onBack:function(){setScr('det');refreshCard();}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
+      scr==='buy' && card && React.createElement(BuyService, { card:card, onBack:function(){setScr('det');refreshCard();}, onPay:function(a,invoiceId){setAmt(a);setSvc(invoiceId);setScr('pay');} }),
       scr==='pay' && card && React.createElement(YooKassa, { card:card, amt:amt, svc:svc, onBack:function(){setScr('det');}, onDone:function(){if(card){api.getCardInfo(card.id,true).catch(function(){});} setScr('cards');setTimeout(fetchCards,1000);}, bridge:bridge }),
     )
   );
